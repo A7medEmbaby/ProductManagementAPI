@@ -1,0 +1,115 @@
+﻿📁 C:\Users\hp435\DotNet\Projects\Brace Technology\ProductManagement
+├── 📁 Database
+│   ├── 📄 ProductManagement.db
+│   ├── 📄 ProductManagement.db-shm
+│   └── 📄 ProductManagement.db-wal
+├── 📁 ProductManagement
+│   ├── 📁 API
+│   │   ├── 📁 Controllers
+│   │   │   ├── 📄 CategoriesController.cs
+│   │   │   └── 📄 ProductsController.cs
+│   │   ├── 📁 Middleware
+│   │   │   ├── 📄 GlobalExceptionMiddleware.cs
+│   │   │   └── 📄 ValidationMiddleware.cs
+│   │   └── 📄 Program.cs
+│   ├── 📁 Application
+│   │   ├── 📁 Categories
+│   │   │   ├── 📁 Commands
+│   │   │   │   ├── 📄 CreateCategoryCommand.cs
+│   │   │   │   ├── 📄 DeleteCategoryCommand.cs
+│   │   │   │   └── 📄 UpdateCategoryCommand.cs
+│   │   │   ├── 📁 DTOs
+│   │   │   │   ├── 📄 CategoryResponse.cs
+│   │   │   │   ├── 📄 CreateCategoryRequest.cs
+│   │   │   │   └── 📄 UpdateCategoryRequest.cs
+│   │   │   ├── 📁 EventHandlers
+│   │   │   │   └── 📄 CategoryDeletedEventHandler.cs
+│   │   │   ├── 📁 Handlers
+│   │   │   │   ├── 📄 CreateCategoryHandler.cs
+│   │   │   │   ├── 📄 DeleteCategoryHandler.cs
+│   │   │   │   ├── 📄 GetCategoriesHandler.cs
+│   │   │   │   ├── 📄 GetCategoryHandler.cs
+│   │   │   │   └── 📄 UpdateCategoryHandler.cs
+│   │   │   ├── 📁 Queries
+│   │   │   │   ├── 📄 GetCategoriesQuery.cs
+│   │   │   │   └── 📄 GetCategoryQuery.cs
+│   │   │   └── 📁 Validators
+│   │   │       ├── 📄 CreateCategoryCommandValidator.cs
+│   │   │       └── 📄 UpdateCategoryCommandValidator.cs
+│   │   ├── 📁 Common
+│   │   │   └── 📄 PagedResult.cs
+│   │   └── 📁 Products
+│   │       ├── 📁 Commands
+│   │       │   ├── 📄 CreateProductCommand.cs
+│   │       │   ├── 📄 DeleteProductCommand.cs
+│   │       │   └── 📄 UpdateProductCommand.cs
+│   │       ├── 📁 DTOs
+│   │       │   ├── 📄 CreateProductRequest.cs
+│   │       │   ├── 📄 ProductResponse.cs
+│   │       │   └── 📄 UpdateProductRequest.cs
+│   │       ├── 📁 EventHandlers
+│   │       │   ├── 📄 ProductCategoryChangedEventHandler.cs
+│   │       │   └── 📄 ProductCreatedEventHandler.cs
+│   │       ├── 📁 Handlers
+│   │       │   ├── 📄 CreateProductHandler.cs
+│   │       │   ├── 📄 DeleteProductHandler.cs
+│   │       │   ├── 📄 GetProductHandler.cs
+│   │       │   ├── 📄 GetProductsByCategoryHandler.cs
+│   │       │   ├── 📄 GetProductsHandler.cs
+│   │       │   └── 📄 UpdateProductHandler.cs
+│   │       ├── 📁 Queries
+│   │       │   ├── 📄 GetProductQuery.cs
+│   │       │   ├── 📄 GetProductsByCategoryQuery.cs
+│   │       │   └── 📄 GetProductsQuery.cs
+│   │       └── 📁 Validators
+│   │           ├── 📄 CreateProductCommandValidator.cs
+│   │           └── 📄 UpdateProductCommandValidator.cs
+│   ├── 📁 Domain
+│   │   ├── 📁 Categories
+│   │   │   ├── 📁 Events
+│   │   │   │   ├── 📄 CategoryCreatedEvent.cs
+│   │   │   │   ├── 📄 CategoryDeletedEvent.cs
+│   │   │   │   └── 📄 CategoryUpdatedEvent.cs
+│   │   │   ├── 📄 Category.cs
+│   │   │   └── 📄 ICategoryRepository.cs
+│   │   ├── 📁 Common
+│   │   │   ├── 📄 AggregateRoot.cs
+│   │   │   ├── 📄 Entity.cs
+│   │   │   └── 📄 IDomainEvent.cs
+│   │   ├── 📁 Products
+│   │   │   ├── 📁 Events
+│   │   │   │   ├── 📄 ProductCategoryChangedEvent.cs
+│   │   │   │   ├── 📄 ProductCreatedEvent.cs
+│   │   │   │   ├── 📄 ProductDeletedEvent.cs
+│   │   │   │   └── 📄 ProductUpdatedEvent.cs
+│   │   │   ├── 📄 IProductRepository.cs
+│   │   │   └── 📄 Product.cs
+│   │   └── 📁 ValueObjects
+│   │       ├── 📄 CategoryId.cs
+│   │       ├── 📄 CategoryName.cs
+│   │       ├── 📄 Money.cs
+│   │       ├── 📄 ProductId.cs
+│   │       └── 📄 ProductName.cs
+│   ├── 📁 Infrastructure
+│   │   ├── 📁 Data
+│   │   │   ├── 📁 Configurations
+│   │   │   │   ├── 📄 CategoryConfiguration.cs
+│   │   │   │   └── 📄 ProductConfiguration.cs
+│   │   │   ├── 📁 Repositories
+│   │   │   │   ├── 📄 CategoryRepository.cs
+│   │   │   │   └── 📄 ProductRepository.cs
+│   │   │   └── 📄 ProductManagementDbContext.cs
+│   │   └── 📁 Events
+│   │       ├── 📄 DomainEventDispatcher.cs
+│   │       └── 📄 IDomainEventDispatcher.cs
+│   ├── 📁 Properties
+│   │   └── 📄 launchSettings.json
+│   ├── 📄 appsettings.Development.json
+│   ├── 📄 appsettings.json
+│   ├── 📄 ProductManagement.csproj
+│   └── 📄 ProductManagement.http
+├── 📄 .gitattributes
+├── 📄 .gitignore
+├── 📄 ProductManagement.sln
+├── 📄 ProductManagement_tree_20250903_134419.txt
+└── 📄 README.md

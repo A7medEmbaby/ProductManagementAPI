@@ -3,6 +3,8 @@ using MediatR;
 using ProductManagement.Application.Categories.Commands;
 using ProductManagement.Application.Categories.Queries;
 using ProductManagement.Application.Categories.DTOs;
+using ProductManagement.Application.Common;
+using System.Net;
 
 namespace ProductManagement.API.Controllers;
 
@@ -20,90 +22,108 @@ public class CategoriesController : ControllerBase
     /// <summary>
     /// Get all categories
     /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetCategories()
+    [HttpGet("GetAllCategories")]
+    public async Task<ActionResult<APIResponse<List<CategoryResponse>>>> GetCategories()
     {
         var query = new GetCategoriesQuery();
         var result = await _mediator.Send(query);
-        return Ok(result);
+        var response = new APIResponse<List<CategoryResponse>>(HttpStatusCode.OK, result, "Categories retrieved successfully");
+        return Ok(response);
     }
 
     /// <summary>
     /// Get category by ID
     /// </summary>
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetCategory(Guid id)
+    [HttpGet("GetCategoryById/{id}")]
+    public async Task<ActionResult<APIResponse<CategoryResponse>>> GetCategory(Guid id)
     {
         var query = new GetCategoryQuery(id);
         var result = await _mediator.Send(query);
 
         if (result == null)
-            return NotFound($"Category with ID {id} not found");
+        {
+            var errorResponse = new APIResponse<CategoryResponse>(HttpStatusCode.NotFound, $"Category with ID {id} not found");
+            return NotFound(errorResponse);
+        }
 
-        return Ok(result);
+        var response = new APIResponse<CategoryResponse>(HttpStatusCode.OK, result, "Category retrieved successfully");
+        return Ok(response);
     }
 
     /// <summary>
     /// Create a new category
     /// </summary>
-    [HttpPost]
-    public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequest request)
+    [HttpPost("CreateCategory")]
+    public async Task<ActionResult<APIResponse<CategoryResponse>>> CreateCategory([FromBody] CreateCategoryRequest request)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        {
+            var validationResponse = new APIResponse<CategoryResponse>(HttpStatusCode.BadRequest, "Validation failed", ModelState);
+            return BadRequest(validationResponse);
+        }
 
         try
         {
             var command = CreateCategoryCommand.FromRequest(request);
             var result = await _mediator.Send(command);
-            return CreatedAtAction(nameof(GetCategory), new { id = result.Id }, result);
+            var response = new APIResponse<CategoryResponse>(HttpStatusCode.Created, result, "Category created successfully");
+            return CreatedAtAction(nameof(GetCategory), new { id = result.Id }, response);
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            var errorResponse = new APIResponse<CategoryResponse>(HttpStatusCode.BadRequest, ex.Message);
+            return BadRequest(errorResponse);
         }
     }
 
     /// <summary>
     /// Update an existing category
     /// </summary>
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryRequest request)
+    [HttpPut("UpdateCategoryById/{id}")]
+    public async Task<ActionResult<APIResponse<CategoryResponse>>> UpdateCategory(Guid id, [FromBody] UpdateCategoryRequest request)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        {
+            var validationResponse = new APIResponse<CategoryResponse>(HttpStatusCode.BadRequest, "Validation failed", ModelState);
+            return BadRequest(validationResponse);
+        }
 
         try
         {
             var command = UpdateCategoryCommand.FromRequest(id, request);
             var result = await _mediator.Send(command);
-            return Ok(result);
+            var response = new APIResponse<CategoryResponse>(HttpStatusCode.OK, result, "Category updated successfully");
+            return Ok(response);
         }
         catch (ArgumentException ex)
         {
-            return NotFound(ex.Message);
+            var errorResponse = new APIResponse<CategoryResponse>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
         }
     }
 
     /// <summary>
     /// Delete a category
     /// </summary>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteCategory(Guid id)
+    [HttpDelete("DeleteCategoryById/{id}")]
+    public async Task<ActionResult<APIResponse<string>>> DeleteCategory(Guid id)
     {
         try
         {
             var command = new DeleteCategoryCommand(id);
             await _mediator.Send(command);
-            return NoContent();
+            var response = new APIResponse<string>(HttpStatusCode.NoContent, null, "Category deleted successfully");
+            return Ok(response);
         }
         catch (ArgumentException ex)
         {
-            return NotFound(ex.Message);
+            var errorResponse = new APIResponse<string>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(ex.Message);
+            var errorResponse = new APIResponse<string>(HttpStatusCode.Conflict, ex.Message);
+            return Conflict(errorResponse);
         }
     }
 }

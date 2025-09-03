@@ -3,6 +3,8 @@ using MediatR;
 using ProductManagement.Application.Products.Commands;
 using ProductManagement.Application.Products.Queries;
 using ProductManagement.Application.Products.DTOs;
+using ProductManagement.Application.Common;
+using System.Net;
 
 namespace ProductManagement.API.Controllers;
 
@@ -20,97 +22,115 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Get all products with pagination
     /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    [HttpGet("GetAllProducts")]
+    public async Task<ActionResult<APIResponse<PagedResult<ProductResponse>>>> GetProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var query = new GetProductsQuery(pageNumber, pageSize);
         var result = await _mediator.Send(query);
-        return Ok(result);
+        var response = new APIResponse<PagedResult<ProductResponse>>(HttpStatusCode.OK, result, "Products retrieved successfully");
+        return Ok(response);
     }
 
     /// <summary>
     /// Get product by ID
     /// </summary>
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetProduct(Guid id)
+    [HttpGet("GetProductBy/{id}")]
+    public async Task<ActionResult<APIResponse<ProductResponse>>> GetProduct(Guid id)
     {
         var query = new GetProductQuery(id);
         var result = await _mediator.Send(query);
 
         if (result == null)
-            return NotFound($"Product with ID {id} not found");
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.NotFound, $"Product with ID {id} not found");
+            return NotFound(errorResponse);
+        }
 
-        return Ok(result);
+        var response = new APIResponse<ProductResponse>(HttpStatusCode.OK, result, "Product retrieved successfully");
+        return Ok(response);
     }
 
     /// <summary>
     /// Get products by category ID
     /// </summary>
-    [HttpGet("category/{categoryId}")]
-    public async Task<IActionResult> GetProductsByCategory(Guid categoryId)
+    [HttpGet("GetProductsByCategoryId/{categoryId}")]
+    public async Task<ActionResult<APIResponse<List<ProductResponse>>>> GetProductsByCategory(Guid categoryId)
     {
         var query = new GetProductsByCategoryQuery(categoryId);
         var result = await _mediator.Send(query);
-        return Ok(result);
+        var response = new APIResponse<List<ProductResponse>>(HttpStatusCode.OK, result, "Products retrieved successfully");
+        return Ok(response);
     }
 
     /// <summary>
     /// Create a new product
     /// </summary>
-    [HttpPost]
-    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
+    [HttpPost("CreateProduct")]
+    public async Task<ActionResult<APIResponse<ProductResponse>>> CreateProduct([FromBody] CreateProductRequest request)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        {
+            var validationResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, "Validation failed", ModelState);
+            return BadRequest(validationResponse);
+        }
 
         try
         {
             var command = CreateProductCommand.FromRequest(request);
             var result = await _mediator.Send(command);
-            return CreatedAtAction(nameof(GetProduct), new { id = result.Id }, result);
+            var response = new APIResponse<ProductResponse>(HttpStatusCode.Created, result, "Product created successfully");
+            return CreatedAtAction(nameof(GetProduct), new { id = result.Id }, response);
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, ex.Message);
+            return BadRequest(errorResponse);
         }
     }
 
     /// <summary>
     /// Update an existing product
     /// </summary>
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
+    [HttpPut("UpdateProductById/{id}")]
+    public async Task<ActionResult<APIResponse<ProductResponse>>> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        {
+            var validationResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, "Validation failed", ModelState);
+            return BadRequest(validationResponse);
+        }
 
         try
         {
             var command = UpdateProductCommand.FromRequest(id, request);
             var result = await _mediator.Send(command);
-            return Ok(result);
+            var response = new APIResponse<ProductResponse>(HttpStatusCode.OK, result, "Product updated successfully");
+            return Ok(response);
         }
         catch (ArgumentException ex)
         {
-            return NotFound(ex.Message);
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
         }
     }
 
     /// <summary>
     /// Delete a product
     /// </summary>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteProduct(Guid id)
+    [HttpDelete("DeleteProductById/{id}")]
+    public async Task<ActionResult<APIResponse<string>>> DeleteProduct(Guid id)
     {
         try
         {
             var command = new DeleteProductCommand(id);
             await _mediator.Send(command);
-            return NoContent();
+            var response = new APIResponse<string>(HttpStatusCode.NoContent, null, "Product deleted successfully");
+            return Ok(response);
         }
         catch (ArgumentException ex)
         {
-            return NotFound(ex.Message);
+            var errorResponse = new APIResponse<string>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
         }
     }
 }
