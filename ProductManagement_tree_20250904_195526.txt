@@ -1,4 +1,6 @@
 ﻿📁 C:\Users\hp435\DotNet\Projects\Brace Technology\ProductManagement
+├── 📁 .github
+│   └── 📁 workflows
 ├── 📁 Database
 │   ├── 📄 ProductManagement.db
 │   ├── 📄 ProductManagement.db-shm
@@ -37,6 +39,7 @@
 │   │   │       ├── 📄 CreateCategoryCommandValidator.cs
 │   │   │       └── 📄 UpdateCategoryCommandValidator.cs
 │   │   ├── 📁 Common
+│   │   │   ├── 📄 APIResponse.cs
 │   │   │   └── 📄 PagedResult.cs
 │   │   └── 📁 Products
 │   │       ├── 📁 Commands
@@ -48,8 +51,11 @@
 │   │       │   ├── 📄 ProductResponse.cs
 │   │       │   └── 📄 UpdateProductRequest.cs
 │   │       ├── 📁 EventHandlers
+│   │       │   ├── 📄 ProductCategoryChangedCountHandler.cs
 │   │       │   ├── 📄 ProductCategoryChangedEventHandler.cs
-│   │       │   └── 📄 ProductCreatedEventHandler.cs
+│   │       │   ├── 📄 ProductCreatedCountHandler.cs
+│   │       │   ├── 📄 ProductCreatedEventHandler.cs
+│   │       │   └── 📄 ProductDeletedCountHandler.cs
 │   │       ├── 📁 Handlers
 │   │       │   ├── 📄 CreateProductHandler.cs
 │   │       │   ├── 📄 DeleteProductHandler.cs
@@ -112,4 +118,5 @@
 ├── 📄 .gitignore
 ├── 📄 ProductManagement.sln
 ├── 📄 ProductManagement_tree_20250903_134419.txt
+├── 📄 ProductManagement_tree_20250904_195526.txt
 └── 📄 README.md
