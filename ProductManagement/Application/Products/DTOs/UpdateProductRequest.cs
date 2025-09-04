@@ -9,6 +9,9 @@ public record UpdateProductRequest
     public string Name { get; init; } = string.Empty;
 
     [Required]
+    public Guid CategoryId { get; init; }
+
+    [Required]
     [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]
     public decimal Price { get; init; }
 

@@ -2,16 +2,19 @@ using MediatR;
 using ProductManagement.Application.Products.Commands;
 using ProductManagement.Application.Products.DTOs;
 using ProductManagement.Domain.Products;
+using ProductManagement.Domain.Categories;
 
 namespace ProductManagement.Application.Products.Handlers;
 
 public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, ProductResponse>
 {
     private readonly IProductRepository _productRepository;
+    private readonly ICategoryRepository _categoryRepository;
 
-    public UpdateProductHandler(IProductRepository productRepository)
+    public UpdateProductHandler(IProductRepository productRepository, ICategoryRepository categoryRepository)
     {
         _productRepository = productRepository;
+        _categoryRepository = categoryRepository;
     }
 
     public async Task<ProductResponse> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
@@ -21,9 +24,20 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, Produc
         if (product == null)
             throw new ArgumentException($"Product with ID {request.ProductId} not found");
 
-        // Update product
+        // Validate new category exists
+        var categoryExists = await _categoryRepository.ExistsAsync(request.GetCategoryId(), cancellationToken);
+        if (!categoryExists)
+            throw new ArgumentException($"Category with ID {request.CategoryId} does not exist");
+
+        // Update product properties
         product.UpdateName(request.GetProductName());
         product.UpdatePrice(request.GetPrice());
+
+        // Change category if different (this will trigger ProductCategoryChangedEvent)
+        if (product.CategoryId.Value != request.CategoryId)
+        {
+            product.ChangeCategory(request.GetCategoryId());
+        }
 
         // Save changes
         await _productRepository.UpdateAsync(product, cancellationToken);

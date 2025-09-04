@@ -7,6 +7,7 @@ using ProductManagement.Domain.Products;
 using ProductManagement.Domain.Categories;
 using System.Reflection;
 using ProductManagement.API.Middleware;
+using ProductManagement.Application.Products.EventHandlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +20,6 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Product Management API", Version = "v1" });
 
-    // Only include XML comments if the file exists
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
@@ -43,8 +43,11 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<ProductManagementDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=../Database/ProductManagement.db"));
 
-// Add MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+// Add MediatR from Application assembly
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+});
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
@@ -53,7 +56,7 @@ builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-// Register domain event dispatcher
+// Register domain event dispatcher - FIXED: Use same DbContext instance
 builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
 var app = builder.Build();
@@ -65,7 +68,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Add custom middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<ValidationMiddleware>();
 

@@ -1,43 +1,57 @@
 using MediatR;
 using ProductManagement.Domain.Common;
 using ProductManagement.Infrastructure.Data;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace ProductManagement.Infrastructure.Events;
 
 public class DomainEventDispatcher : IDomainEventDispatcher
 {
     private readonly IMediator _mediator;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly ProductManagementDbContext _context;
 
-    public DomainEventDispatcher(IMediator mediator, IServiceProvider serviceProvider)
+    public DomainEventDispatcher(IMediator mediator, ProductManagementDbContext context)
     {
         _mediator = mediator;
-        _serviceProvider = serviceProvider;
+        _context = context;
     }
 
     public async Task DispatchEventsAsync(CancellationToken cancellationToken = default)
     {
-        using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ProductManagementDbContext>();
+        // Use the SAME context that has the tracked entities
+        var productEntities = _context.ChangeTracker.Entries<ProductManagement.Domain.Products.Product>()
+            .Where(e => e.Entity.DomainEvents.Any())
+            .Select(e => e.Entity)
+            .ToList();
 
-        // Get all entities with domain events
-        var entitiesWithEvents = context.ChangeTracker.Entries()
-            .Where(e => e.Entity is AggregateRoot<object> && ((AggregateRoot<object>)e.Entity).DomainEvents.Any())
-            .Select(e => (AggregateRoot<object>)e.Entity)
+        var categoryEntities = _context.ChangeTracker.Entries<ProductManagement.Domain.Categories.Category>()
+            .Where(e => e.Entity.DomainEvents.Any())
+            .Select(e => e.Entity)
             .ToList();
 
         // Collect all domain events
-        var domainEvents = entitiesWithEvents
-            .SelectMany(e => e.DomainEvents)
-            .ToList();
+        var domainEvents = new List<IDomainEvent>();
 
-        // Clear events from entities first
-        entitiesWithEvents.ForEach(e => e.ClearDomainEvents());
+        foreach (var product in productEntities)
+        {
+            domainEvents.AddRange(product.DomainEvents);
+            product.ClearDomainEvents();
+        }
+
+        foreach (var category in categoryEntities)
+        {
+            domainEvents.AddRange(category.DomainEvents);
+            category.ClearDomainEvents();
+        }
+
+        // Debug logging
+        Console.WriteLine($"Found {productEntities.Count} products with events");
+        Console.WriteLine($"Found {categoryEntities.Count} categories with events");
+        Console.WriteLine($"Total domain events to dispatch: {domainEvents.Count}");
 
         // Publish each event
         foreach (var domainEvent in domainEvents)
         {
+            Console.WriteLine($"Publishing event: {domainEvent.GetType().Name}");
             await _mediator.Publish(domainEvent, cancellationToken);
         }
     }
