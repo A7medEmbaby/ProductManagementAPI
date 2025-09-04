@@ -3,6 +3,7 @@ namespace ProductManagement.Application.Categories.DTOs;
 public record CategoryResponse(
     Guid Id,
     string Name,
+    int ProductCount,
     DateTime CreatedAt,
     DateTime? UpdatedAt
 );
@@ -13,6 +14,7 @@ public static class CategoryExtensions
         => new(
             category.Id.Value,
             category.Name.Value,
+            category.ProductCount,
             category.CreatedAt,
             category.UpdatedAt
         );

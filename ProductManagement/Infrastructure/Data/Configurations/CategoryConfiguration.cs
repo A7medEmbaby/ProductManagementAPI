@@ -23,6 +23,11 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .HasMaxLength(100)
             .IsRequired();
 
+        // ProductCount - NEW FIELD
+        builder.Property(c => c.ProductCount)
+            .IsRequired()
+            .HasDefaultValue(0);
+
         // Timestamps
         builder.Property(c => c.CreatedAt)
             .IsRequired();
@@ -37,5 +42,8 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsUnique();
 
         builder.HasIndex(c => c.CreatedAt);
+
+        // Index on ProductCount for potential queries
+        builder.HasIndex(c => c.ProductCount);
     }
 }
