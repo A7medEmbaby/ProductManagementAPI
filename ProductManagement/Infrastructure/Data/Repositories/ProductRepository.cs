@@ -60,21 +60,27 @@ public class ProductRepository : IProductRepository
     public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
     {
         await _context.Products.AddAsync(product, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        // FIXED: Dispatch events BEFORE SaveChanges
         await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
     {
         _context.Products.Update(product);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        // FIXED: Dispatch events BEFORE SaveChanges
         await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(Product product, CancellationToken cancellationToken = default)
     {
         _context.Products.Remove(product);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        // FIXED: Dispatch events BEFORE SaveChanges
         await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -49,21 +49,27 @@ public class CategoryRepository : ICategoryRepository
     public async Task AddAsync(Category category, CancellationToken cancellationToken = default)
     {
         await _context.Categories.AddAsync(category, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        // FIXED: Dispatch events BEFORE SaveChanges
         await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(Category category, CancellationToken cancellationToken = default)
     {
         _context.Categories.Update(category);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        // FIXED: Dispatch events BEFORE SaveChanges
         await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(Category category, CancellationToken cancellationToken = default)
     {
         _context.Categories.Remove(category);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        // FIXED: Dispatch events BEFORE SaveChanges
         await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
