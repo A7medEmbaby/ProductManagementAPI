@@ -1,6 +1,8 @@
-﻿using System.Reflection;
-using FluentValidation;
+﻿using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using ProductManagement.Application.Common.Behaviors;
+using System.Reflection;
 
 namespace ProductManagement.Application;
 
@@ -16,6 +18,9 @@ public static class DependencyInjection
 
         // Register FluentValidation validators from Application assembly
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
 
         return services;
     }

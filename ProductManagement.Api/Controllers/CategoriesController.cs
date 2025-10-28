@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ProductManagement.Application.Categories.Commands;
 using ProductManagement.Application.Categories.Queries;
@@ -56,11 +56,9 @@ public class CategoriesController : ControllerBase
     [HttpPost("CreateCategory")]
     public async Task<ActionResult<APIResponse<CategoryResponse>>> CreateCategory([FromBody] CreateCategoryRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var validationResponse = new APIResponse<CategoryResponse>(HttpStatusCode.BadRequest, "Validation failed", ModelState);
-            return BadRequest(validationResponse);
-        }
+        // ✅ REMOVED: ModelState.IsValid check
+        // Validation is now handled automatically by ValidationBehavior before the handler executes
+        // If validation fails, ValidationException will be thrown and caught by ValidationMiddleware
 
         try
         {
@@ -82,11 +80,8 @@ public class CategoriesController : ControllerBase
     [HttpPut("UpdateCategoryById/{id}")]
     public async Task<ActionResult<APIResponse<CategoryResponse>>> UpdateCategory(Guid id, [FromBody] UpdateCategoryRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var validationResponse = new APIResponse<CategoryResponse>(HttpStatusCode.BadRequest, "Validation failed", ModelState);
-            return BadRequest(validationResponse);
-        }
+        // ✅ REMOVED: ModelState.IsValid check
+        // Validation is now handled automatically by ValidationBehavior
 
         try
         {

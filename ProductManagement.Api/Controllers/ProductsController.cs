@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using ProductManagement.Application.Products.Commands;
 using ProductManagement.Application.Products.Queries;
@@ -68,11 +68,9 @@ public class ProductsController : ControllerBase
     [HttpPost("CreateProduct")]
     public async Task<ActionResult<APIResponse<ProductResponse>>> CreateProduct([FromBody] CreateProductRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var validationResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, "Validation failed", ModelState);
-            return BadRequest(validationResponse);
-        }
+        // ✅ REMOVED: ModelState.IsValid check
+        // Validation is now handled automatically by ValidationBehavior before the handler executes
+        // If validation fails, ValidationException will be thrown and caught by ValidationMiddleware
 
         try
         {
@@ -94,11 +92,8 @@ public class ProductsController : ControllerBase
     [HttpPut("UpdateProductById/{id}")]
     public async Task<ActionResult<APIResponse<ProductResponse>>> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var validationResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, "Validation failed", ModelState);
-            return BadRequest(validationResponse);
-        }
+        // ✅ REMOVED: ModelState.IsValid check
+        // Validation is now handled automatically by ValidationBehavior
 
         try
         {
