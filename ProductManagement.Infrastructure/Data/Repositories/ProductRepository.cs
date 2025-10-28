@@ -1,19 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using ProductManagement.Domain.Products;
 using ProductManagement.Domain.ValueObjects;
-using ProductManagement.Infrastructure.Events;
 
 namespace ProductManagement.Infrastructure.Data.Repositories;
 
 public class ProductRepository : IProductRepository
 {
     private readonly ProductManagementDbContext _context;
-    private readonly IDomainEventDispatcher _domainEventDispatcher;
 
-    public ProductRepository(ProductManagementDbContext context, IDomainEventDispatcher domainEventDispatcher)
+    public ProductRepository(ProductManagementDbContext context)
     {
         _context = context;
-        _domainEventDispatcher = domainEventDispatcher;
     }
 
     public async Task<Product?> GetByIdAsync(ProductId id, CancellationToken cancellationToken = default)
@@ -61,8 +58,6 @@ public class ProductRepository : IProductRepository
     {
         await _context.Products.AddAsync(product, cancellationToken);
 
-        // FIXED: Dispatch events BEFORE SaveChanges
-        await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -70,8 +65,6 @@ public class ProductRepository : IProductRepository
     {
         _context.Products.Update(product);
 
-        // FIXED: Dispatch events BEFORE SaveChanges
-        await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -79,8 +72,6 @@ public class ProductRepository : IProductRepository
     {
         _context.Products.Remove(product);
 
-        // FIXED: Dispatch events BEFORE SaveChanges
-        await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -5,7 +5,7 @@ using ProductManagement.Domain.Categories;
 using ProductManagement.Domain.Products;
 using ProductManagement.Infrastructure.Data;
 using ProductManagement.Infrastructure.Data.Repositories;
-using ProductManagement.Infrastructure.Events;
+using ProductManagement.Infrastructure.Persistence.Interceptors;
 
 namespace ProductManagement.Infrastructure;
 
@@ -15,18 +15,23 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Register DbContext with SQLite
-        services.AddDbContext<ProductManagementDbContext>(options =>
+        services.AddScoped<PublishDomainEventsInterceptor>();
+
+        // Register DbContext with SQLite and the interceptor
+        services.AddDbContext<ProductManagementDbContext>((serviceProvider, options) =>
+        {
+            // Get the interceptor from DI
+            var interceptor = serviceProvider.GetRequiredService<PublishDomainEventsInterceptor>();
+
             options.UseSqlite(
                 configuration.GetConnectionString("DefaultConnection")
-                ?? "Data Source=../Database/ProductManagement.db"));
+                ?? "Data Source=../Database/ProductManagement.db")
+                .AddInterceptors(interceptor);
+        });
 
         // Register Repositories (binding interfaces to implementations)
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
-
-        // Register Domain Event Dispatcher
-        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
         return services;
     }

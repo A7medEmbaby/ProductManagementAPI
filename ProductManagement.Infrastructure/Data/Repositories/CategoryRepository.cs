@@ -1,19 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using ProductManagement.Domain.Categories;
 using ProductManagement.Domain.ValueObjects;
-using ProductManagement.Infrastructure.Events;
 
 namespace ProductManagement.Infrastructure.Data.Repositories;
 
 public class CategoryRepository : ICategoryRepository
 {
     private readonly ProductManagementDbContext _context;
-    private readonly IDomainEventDispatcher _domainEventDispatcher;
 
-    public CategoryRepository(ProductManagementDbContext context, IDomainEventDispatcher domainEventDispatcher)
+    public CategoryRepository(ProductManagementDbContext context)
     {
         _context = context;
-        _domainEventDispatcher = domainEventDispatcher;
     }
 
     public async Task<Category?> GetByIdAsync(CategoryId id, CancellationToken cancellationToken = default)
@@ -50,8 +47,6 @@ public class CategoryRepository : ICategoryRepository
     {
         await _context.Categories.AddAsync(category, cancellationToken);
 
-        // FIXED: Dispatch events BEFORE SaveChanges
-        await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -59,8 +54,6 @@ public class CategoryRepository : ICategoryRepository
     {
         _context.Categories.Update(category);
 
-        // FIXED: Dispatch events BEFORE SaveChanges
-        await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -68,8 +61,6 @@ public class CategoryRepository : ICategoryRepository
     {
         _context.Categories.Remove(category);
 
-        // FIXED: Dispatch events BEFORE SaveChanges
-        await _domainEventDispatcher.DispatchEventsAsync(cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }
