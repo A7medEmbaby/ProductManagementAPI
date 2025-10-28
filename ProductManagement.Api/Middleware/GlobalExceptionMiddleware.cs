@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace ProductManagement.API.Middleware;
+namespace ProductManagement.Api.Middleware;
 
 public class GlobalExceptionMiddleware
 {

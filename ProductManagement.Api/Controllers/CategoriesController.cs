@@ -6,7 +6,7 @@ using ProductManagement.Application.Categories.DTOs;
 using ProductManagement.Application.Common;
 using System.Net;
 
-namespace ProductManagement.API.Controllers;
+namespace ProductManagement.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
