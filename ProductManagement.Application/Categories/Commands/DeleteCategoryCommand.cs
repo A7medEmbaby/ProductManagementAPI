@@ -1,9 +1,9 @@
 using MediatR;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Application.Categories.Commands;
 
 public record DeleteCategoryCommand(Guid CategoryId) : IRequest<Unit>
 {
-    public CategoryId GetCategoryId() => new(CategoryId);
+    public Domain.Categories.ValueObjects.CategoryId GetCategoryId() => Domain.Categories.ValueObjects.CategoryId.Create(CategoryId);
 }

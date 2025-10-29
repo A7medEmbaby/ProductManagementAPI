@@ -1,22 +1,23 @@
-using ProductManagement.Domain.Common;
-using ProductManagement.Domain.ValueObjects;
+﻿using ProductManagement.Domain.Categories.ValueObjects;
 using ProductManagement.Domain.Categories.Events;
+using ProductManagement.Domain.Common.Models;
 
 namespace ProductManagement.Domain.Categories;
 
-public class Category : AggregateRoot<CategoryId>
+// ⚠️ KEY CHANGE: Now uses TWO generic parameters
+public class Category : AggregateRoot<CategoryId, Guid>
 {
     public CategoryName Name { get; private set; }
     public int ProductCount { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    private Category() : base() { }
+    private Category() : base() { } // For EF Core
 
     private Category(CategoryId id, CategoryName name) : base(id)
     {
         Name = name;
-        ProductCount = 0; // Initialize to 0
+        ProductCount = 0;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = null;
     }
@@ -39,7 +40,10 @@ public class Category : AggregateRoot<CategoryId>
         Name = newName;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(CategoryUpdatedEvent.Create(Id, oldName, newName));
+        RaiseDomainEvent(CategoryUpdatedEvent.Create(
+            CategoryId.Create(Id), // Use the primitive Id to recreate CategoryId
+            oldName,
+            newName));
     }
 
     public void IncrementProductCount()
@@ -59,6 +63,8 @@ public class Category : AggregateRoot<CategoryId>
 
     public void Delete()
     {
-        RaiseDomainEvent(CategoryDeletedEvent.Create(Id, Name));
+        RaiseDomainEvent(CategoryDeletedEvent.Create(
+            CategoryId.Create(Id),
+            Name));
     }
 }

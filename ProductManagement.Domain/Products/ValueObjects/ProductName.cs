@@ -1,8 +1,11 @@
-namespace ProductManagement.Domain.ValueObjects;
+﻿using ProductManagement.Domain.Common.Models;
 
-public record ProductName
+namespace ProductManagement.Domain.Products.ValueObjects;
+
+// ⚠️ KEY CHANGE: Inherit from ValueObject instead of record
+public sealed class ProductName : ValueObject
 {
-    public string Value { get; }
+    public string Value { get; private set; }
 
     public ProductName(string value)
     {
@@ -16,6 +19,15 @@ public record ProductName
         Value = trimmed;
     }
 
+    private ProductName() { } // For EF Core
+
+    // ⚠️ NEW: Implement equality based on Value
+    public override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Value;
+    }
+
+    // Keep implicit conversions for convenience
     public static implicit operator string(ProductName productName) => productName.Value;
     public static implicit operator ProductName(string value) => new(value);
 

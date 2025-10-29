@@ -1,5 +1,5 @@
-using ProductManagement.Domain.Common;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
+using ProductManagement.Domain.Common.Models;
 
 namespace ProductManagement.Domain.Categories.Events;
 

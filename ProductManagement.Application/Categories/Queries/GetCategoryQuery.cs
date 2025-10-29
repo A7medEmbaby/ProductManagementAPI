@@ -1,10 +1,10 @@
 using MediatR;
 using ProductManagement.Application.Categories.DTOs;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Application.Categories.Queries;
 
 public record GetCategoryQuery(Guid CategoryId) : IRequest<CategoryResponse?>
 {
-    public CategoryId GetCategoryId() => new(CategoryId);
+    public Domain.Categories.ValueObjects.CategoryId GetCategoryId() => Domain.Categories.ValueObjects.CategoryId.Create(CategoryId);
 }

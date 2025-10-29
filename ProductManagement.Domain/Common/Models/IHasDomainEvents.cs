@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProductManagement.Domain.Common
+namespace ProductManagement.Domain.Common.Models
 {
     public interface IHasDomainEvents
     {

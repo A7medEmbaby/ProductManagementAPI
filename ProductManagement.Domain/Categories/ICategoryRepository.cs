@@ -1,4 +1,4 @@
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Domain.Categories;
 

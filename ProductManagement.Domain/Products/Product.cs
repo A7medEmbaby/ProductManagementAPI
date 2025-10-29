@@ -1,10 +1,12 @@
-using ProductManagement.Domain.Common;
-using ProductManagement.Domain.ValueObjects;
+﻿using ProductManagement.Domain.Products.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 using ProductManagement.Domain.Products.Events;
+using ProductManagement.Domain.Common.Models;
 
 namespace ProductManagement.Domain.Products;
 
-public class Product : AggregateRoot<ProductId>
+// ⚠️ KEY CHANGE: Now uses TWO generic parameters
+public class Product : AggregateRoot<ProductId, Guid>
 {
     public ProductName Name { get; private set; }
     public CategoryId CategoryId { get; private set; }
@@ -12,7 +14,7 @@ public class Product : AggregateRoot<ProductId>
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    private Product() : base() { }
+    private Product() : base() { } // For EF Core
 
     private Product(ProductId id, ProductName name, CategoryId categoryId, Money price)
         : base(id)
@@ -41,7 +43,10 @@ public class Product : AggregateRoot<ProductId>
         Name = newName;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(ProductUpdatedEvent.Create(Id, Name, Price));
+        RaiseDomainEvent(ProductUpdatedEvent.Create(
+            ProductId.Create(Id),
+            Name,
+            Price));
     }
 
     public void UpdatePrice(Money newPrice)
@@ -51,7 +56,10 @@ public class Product : AggregateRoot<ProductId>
         Price = newPrice;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(ProductUpdatedEvent.Create(Id, Name, Price));
+        RaiseDomainEvent(ProductUpdatedEvent.Create(
+            ProductId.Create(Id),
+            Name,
+            Price));
     }
 
     public void ChangeCategory(CategoryId newCategoryId)
@@ -62,11 +70,16 @@ public class Product : AggregateRoot<ProductId>
         CategoryId = newCategoryId;
         UpdatedAt = DateTime.UtcNow;
 
-        RaiseDomainEvent(ProductCategoryChangedEvent.Create(Id, oldCategoryId, newCategoryId));
+        RaiseDomainEvent(ProductCategoryChangedEvent.Create(
+            ProductId.Create(Id),
+            oldCategoryId,
+            newCategoryId));
     }
 
     public void Delete()
     {
-        RaiseDomainEvent(ProductDeletedEvent.Create(Id, CategoryId));
+        RaiseDomainEvent(ProductDeletedEvent.Create(
+            ProductId.Create(Id),
+            CategoryId));
     }
 }

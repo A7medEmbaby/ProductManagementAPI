@@ -1,6 +1,6 @@
 using MediatR;
 
-namespace ProductManagement.Domain.Common;
+namespace ProductManagement.Domain.Common.Models;
 
 public interface IDomainEvent : INotification
 {

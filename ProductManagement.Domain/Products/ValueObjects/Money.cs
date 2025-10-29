@@ -1,9 +1,11 @@
-namespace ProductManagement.Domain.ValueObjects;
+﻿using ProductManagement.Domain.Common.Models;
 
-public record Money
+namespace ProductManagement.Domain.Products.ValueObjects;
+
+public sealed class Money : ValueObject
 {
-    public decimal Amount { get; }
-    public string Currency { get; }
+    public decimal Amount { get; private set; }
+    public string Currency { get; private set; }
 
     public Money(decimal amount, string currency = "USD")
     {
@@ -17,10 +19,19 @@ public record Money
         Currency = currency.Trim().ToUpperInvariant();
     }
 
+    private Money() { } // For EF Core
+
+    public override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Amount;
+        yield return Currency;
+    }
+
     public static Money Zero => new(0);
     public static Money Create(decimal amount, string currency = "USD") => new(amount, currency);
 
     public override string ToString() => $"{Amount:C} {Currency}";
 
+    // Keep implicit conversion for convenience
     public static implicit operator decimal(Money money) => money.Amount;
 }

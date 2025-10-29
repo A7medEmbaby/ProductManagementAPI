@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ProductManagement.Domain.Categories;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Infrastructure.Data.Repositories;
 

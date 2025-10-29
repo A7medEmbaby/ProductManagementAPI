@@ -1,6 +1,6 @@
-using MediatR;
+﻿using MediatR;
 using ProductManagement.Application.Categories.DTOs;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Application.Categories.Commands;
 
@@ -12,6 +12,7 @@ public record UpdateCategoryCommand(
     public static UpdateCategoryCommand FromRequest(Guid categoryId, UpdateCategoryRequest request)
         => new(categoryId, request.Name);
 
-    public CategoryId GetCategoryId() => new(CategoryId);
-    public CategoryName GetCategoryName() => new(Name);
+    public Domain.Categories.ValueObjects.CategoryId GetCategoryId() => Domain.Categories.ValueObjects.CategoryId.Create(CategoryId);
+
+    public CategoryName GetCategoryName() => new CategoryName(Name);
 }

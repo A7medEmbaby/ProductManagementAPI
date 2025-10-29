@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProductManagement.Domain.Categories;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Infrastructure.Data.Configurations;
 
@@ -11,11 +11,10 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.ToTable("Categories");
 
-        // Primary key
+        // ⚠️ KEY CHANGE: Now configures the PRIMITIVE Guid, not CategoryId
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Id)
-            .HasConversion(id => id.Value, value => new CategoryId(value))
-            .ValueGeneratedNever();
+            .ValueGeneratedNever(); // No conversion needed - it's already a Guid!
 
         // Category name value object
         builder.Property(c => c.Name)
@@ -23,7 +22,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .HasMaxLength(100)
             .IsRequired();
 
-        // ProductCount - NEW FIELD
+        // ProductCount
         builder.Property(c => c.ProductCount)
             .IsRequired()
             .HasDefaultValue(0);
@@ -42,8 +41,6 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsUnique();
 
         builder.HasIndex(c => c.CreatedAt);
-
-        // Index on ProductCount for potential queries
         builder.HasIndex(c => c.ProductCount);
     }
 }

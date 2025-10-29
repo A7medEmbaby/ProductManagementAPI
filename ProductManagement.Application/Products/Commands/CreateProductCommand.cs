@@ -1,6 +1,7 @@
 using MediatR;
 using ProductManagement.Application.Products.DTOs;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
+using ProductManagement.Domain.Products.ValueObjects;
 
 namespace ProductManagement.Application.Products.Commands;
 
@@ -15,6 +16,6 @@ public record CreateProductCommand(
         => new(request.Name, request.CategoryId, request.Price, request.Currency);
 
     public ProductName GetProductName() => new(Name);
-    public CategoryId GetCategoryId() => new(CategoryId);
+    public Domain.Categories.ValueObjects.CategoryId GetCategoryId() => Domain.Categories.ValueObjects.CategoryId.Create(CategoryId);
     public Money GetPrice() => new(Price, Currency);
 }

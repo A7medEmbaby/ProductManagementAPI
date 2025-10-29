@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using ProductManagement.Domain.Common;
+using ProductManagement.Domain.Common.Models;
 
 namespace ProductManagement.Infrastructure.Persistence.Interceptors;
 

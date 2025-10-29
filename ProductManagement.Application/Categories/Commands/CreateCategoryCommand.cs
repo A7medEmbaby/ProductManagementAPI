@@ -1,6 +1,6 @@
 using MediatR;
 using ProductManagement.Application.Categories.DTOs;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Application.Categories.Commands;
 

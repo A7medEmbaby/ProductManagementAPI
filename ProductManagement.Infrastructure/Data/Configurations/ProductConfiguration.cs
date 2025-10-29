@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProductManagement.Domain.Products;
-using ProductManagement.Domain.ValueObjects;
+using ProductManagement.Domain.Products.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Infrastructure.Data.Configurations;
 
@@ -11,11 +12,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
         builder.ToTable("Products");
 
-        // Primary key
+        // ⚠️ KEY CHANGE: Now configures the PRIMITIVE Guid, not ProductId
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Id)
-            .HasConversion(id => id.Value, value => new ProductId(value))
-            .ValueGeneratedNever();
+            .ValueGeneratedNever(); // No conversion needed - it's already a Guid!
 
         // Product name value object
         builder.Property(p => p.Name)
@@ -23,9 +23,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasMaxLength(200)
             .IsRequired();
 
-        // CategoryId - ONLY store the ID, no navigation property!
+        // CategoryId - Still needs conversion (it's a Value Object reference)
         builder.Property(p => p.CategoryId)
-            .HasConversion(id => id.Value, value => new CategoryId(value))
+            .HasConversion(id => id.Value, value => CategoryId.Create(value))
             .IsRequired();
 
         // Money value object (owned entity)
