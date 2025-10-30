@@ -4,7 +4,6 @@ using ProductManagement.Domain.Common.Models;
 
 namespace ProductManagement.Domain.Categories;
 
-// ⚠️ KEY CHANGE: Now uses TWO generic parameters
 public class Category : AggregateRoot<CategoryId, Guid>
 {
     public CategoryName Name { get; private set; }
@@ -24,7 +23,7 @@ public class Category : AggregateRoot<CategoryId, Guid>
 
     public static Category Create(CategoryName name)
     {
-        var categoryId = CategoryId.New();
+        var categoryId = CategoryId.CreateUnique();
         var category = new Category(categoryId, name);
 
         category.RaiseDomainEvent(CategoryCreatedEvent.Create(categoryId, name));
@@ -41,7 +40,7 @@ public class Category : AggregateRoot<CategoryId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(CategoryUpdatedEvent.Create(
-            CategoryId.Create(Id), // Use the primitive Id to recreate CategoryId
+            CategoryId.Create(((AggregateRootId<Guid>)Id).Value),
             oldName,
             newName));
     }
@@ -64,7 +63,7 @@ public class Category : AggregateRoot<CategoryId, Guid>
     public void Delete()
     {
         RaiseDomainEvent(CategoryDeletedEvent.Create(
-            CategoryId.Create(Id),
+            CategoryId.Create(((AggregateRootId<Guid>)Id).Value),
             Name));
     }
 }

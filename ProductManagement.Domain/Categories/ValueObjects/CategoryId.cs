@@ -4,16 +4,25 @@ namespace ProductManagement.Domain.Categories.ValueObjects;
 
 public sealed class CategoryId : AggregateRootId<Guid>
 {
-    private CategoryId(Guid value) : base(value) { }
+    public override Guid Value { get; protected set; }
 
-    private CategoryId() : base() { } // For EF Core
+    private CategoryId(Guid value)
+    {
+        Value = value;
+    }
 
-    public static CategoryId New() => new(Guid.NewGuid());
-    
+    private CategoryId() { } // For EF Core
+
+    public static CategoryId CreateUnique() => new(Guid.NewGuid());
+
     public static CategoryId Create(Guid value) => new(value);
 
     public static CategoryId Empty => new(Guid.Empty);
 
-    // Implicit conversions for convenience
+    public override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Value;
+    }
+
     public static implicit operator Guid(CategoryId categoryId) => categoryId.Value;
 }

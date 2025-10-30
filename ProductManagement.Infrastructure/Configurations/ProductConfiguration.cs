@@ -4,7 +4,7 @@ using ProductManagement.Domain.Products;
 using ProductManagement.Domain.Products.ValueObjects;
 using ProductManagement.Domain.Categories.ValueObjects;
 
-namespace ProductManagement.Infrastructure.Data.Configurations;
+namespace ProductManagement.Infrastructure.Configurations;
 
 public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
@@ -12,10 +12,13 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
         builder.ToTable("Products");
 
-        // ⚠️ KEY CHANGE: Now configures the PRIMITIVE Guid, not ProductId
         builder.HasKey(p => p.Id);
+
         builder.Property(p => p.Id)
-            .ValueGeneratedNever(); // No conversion needed - it's already a Guid!
+            .ValueGeneratedNever()
+            .HasConversion(
+                id => id.Value,                  // To DB: Extract Guid from AggregateRootId
+                value => ProductId.Create(value)); // From DB: Create ProductId from Guid
 
         // Product name value object
         builder.Property(p => p.Name)

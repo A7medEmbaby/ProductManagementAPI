@@ -1,7 +1,7 @@
 using MediatR;
 using ProductManagement.Application.Categories.Commands;
 using ProductManagement.Domain.Categories;
-using ProductManagement.Domain.Products;
+using ProductManagement.Application.Products;
 
 namespace ProductManagement.Application.Categories.Handlers;
 

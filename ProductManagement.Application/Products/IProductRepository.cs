@@ -1,7 +1,8 @@
-using ProductManagement.Domain.Categories.ValueObjects;
+using ProductManagement.Domain.Products;
 using ProductManagement.Domain.Products.ValueObjects;
+using ProductManagement.Domain.Categories.ValueObjects;
 
-namespace ProductManagement.Domain.Products;
+namespace ProductManagement.Application.Products;
 
 public interface IProductRepository
 {

@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using ProductManagement.Domain.Categories;
+using ProductManagement.Application.Categories;
 using ProductManagement.Domain.Products.Events;
 
 namespace ProductManagement.Application.Products.EventHandlers;

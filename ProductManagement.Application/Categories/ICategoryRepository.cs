@@ -1,6 +1,7 @@
 using ProductManagement.Domain.Categories.ValueObjects;
+using ProductManagement.Domain.Categories;
 
-namespace ProductManagement.Domain.Categories;
+namespace ProductManagement.Application.Categories;
 
 public interface ICategoryRepository
 {

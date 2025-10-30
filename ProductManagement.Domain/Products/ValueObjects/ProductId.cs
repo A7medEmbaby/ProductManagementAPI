@@ -4,16 +4,25 @@ namespace ProductManagement.Domain.Products.ValueObjects;
 
 public sealed class ProductId : AggregateRootId<Guid>
 {
-    private ProductId(Guid value) : base(value) { }
+    public override Guid Value { get; protected set; }
 
-    private ProductId() : base() { } // For EF Core
+    private ProductId(Guid value)
+    {
+        Value = value;
+    }
 
-    public static ProductId New() => new(Guid.NewGuid());
-    
+    private ProductId() { } // For EF Core
+
+    public static ProductId CreateUnique() => new(Guid.NewGuid());
+
     public static ProductId Create(Guid value) => new(value);
 
     public static ProductId Empty => new(Guid.Empty);
 
-    // Implicit conversions for convenience
+    public override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Value;
+    }
+
     public static implicit operator Guid(ProductId productId) => productId.Value;
 }

@@ -14,7 +14,7 @@ public static class ProductExtensions
 {
     public static ProductResponse ToResponse(this Domain.Products.Product product)
         => new(
-            product.Id,
+            product.Id.Value,
             product.Name.Value,
             product.CategoryId.Value,
             product.Price.Amount,

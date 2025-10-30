@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProductManagement.Domain.Products;
 using ProductManagement.Domain.Categories;
-using ProductManagement.Infrastructure.Data.Configurations;
+using ProductManagement.Infrastructure.Configurations;
 
 namespace ProductManagement.Infrastructure.Data;
 

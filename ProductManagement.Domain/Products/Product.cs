@@ -5,7 +5,6 @@ using ProductManagement.Domain.Common.Models;
 
 namespace ProductManagement.Domain.Products;
 
-// ⚠️ KEY CHANGE: Now uses TWO generic parameters
 public class Product : AggregateRoot<ProductId, Guid>
 {
     public ProductName Name { get; private set; }
@@ -28,7 +27,7 @@ public class Product : AggregateRoot<ProductId, Guid>
 
     public static Product Create(ProductName name, CategoryId categoryId, Money price)
     {
-        var productId = ProductId.New();
+        var productId = ProductId.CreateUnique();
         var product = new Product(productId, name, categoryId, price);
 
         product.RaiseDomainEvent(ProductCreatedEvent.Create(productId, name, categoryId, price));
@@ -44,7 +43,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(ProductUpdatedEvent.Create(
-            ProductId.Create(Id),
+            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
             Name,
             Price));
     }
@@ -57,7 +56,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(ProductUpdatedEvent.Create(
-            ProductId.Create(Id),
+            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
             Name,
             Price));
     }
@@ -71,7 +70,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(ProductCategoryChangedEvent.Create(
-            ProductId.Create(Id),
+            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
             oldCategoryId,
             newCategoryId));
     }
@@ -79,7 +78,7 @@ public class Product : AggregateRoot<ProductId, Guid>
     public void Delete()
     {
         RaiseDomainEvent(ProductDeletedEvent.Create(
-            ProductId.Create(Id),
+            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
             CategoryId));
     }
 }

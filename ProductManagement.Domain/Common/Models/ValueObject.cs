@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ProductManagement.Domain.Common.Models
+﻿namespace ProductManagement.Domain.Common.Models
 {
     public abstract class ValueObject : IEquatable<ValueObject>
     {
@@ -26,8 +20,8 @@ namespace ProductManagement.Domain.Common.Models
         public override int GetHashCode()
         {
             return GetEqualityComponents()
-                .Select(x => x?.GetHashCode() ?? 0)
-                .Aggregate(0, (a, b) => a ^ b);
+                .Select(x => x is not null ? x.GetHashCode() : 0)
+                .Aggregate((x, y) => x ^ y);
         }
 
         public bool Equals(ValueObject? other)
@@ -35,12 +29,12 @@ namespace ProductManagement.Domain.Common.Models
             return Equals((object?)other);
         }
 
-        public static bool operator ==(ValueObject left, ValueObject right)
+        public static bool operator ==(ValueObject? left, ValueObject? right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(ValueObject left, ValueObject right)
+        public static bool operator !=(ValueObject? left, ValueObject? right)
         {
             return !Equals(left, right);
         }

@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ProductManagement.Domain.Categories;
-using ProductManagement.Domain.Products;
+using ProductManagement.Application.Categories;
+using ProductManagement.Application.Products;
 using ProductManagement.Infrastructure.Data;
 using ProductManagement.Infrastructure.Data.Repositories;
 using ProductManagement.Infrastructure.Persistence.Interceptors;

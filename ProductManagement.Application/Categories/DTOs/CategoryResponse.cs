@@ -12,7 +12,7 @@ public static class CategoryExtensions
 {
     public static CategoryResponse ToResponse(this Domain.Categories.Category category)
         => new(
-            category.Id,
+            category.Id.Value,
             category.Name.Value,
             category.ProductCount,
             category.CreatedAt,

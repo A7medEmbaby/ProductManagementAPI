@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProductManagement.Domain.Categories;
 using ProductManagement.Domain.Categories.ValueObjects;
 
-namespace ProductManagement.Infrastructure.Data.Configurations;
+namespace ProductManagement.Infrastructure.Configurations;
 
 public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 {
@@ -11,10 +11,13 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.ToTable("Categories");
 
-        // ⚠️ KEY CHANGE: Now configures the PRIMITIVE Guid, not CategoryId
         builder.HasKey(c => c.Id);
+
         builder.Property(c => c.Id)
-            .ValueGeneratedNever(); // No conversion needed - it's already a Guid!
+            .ValueGeneratedNever()
+            .HasConversion(
+                id => id.Value,                    // To DB: Extract Guid from AggregateRootId
+                value => CategoryId.Create(value)); // From DB: Create CategoryId from Guid
 
         // Category name value object
         builder.Property(c => c.Name)
