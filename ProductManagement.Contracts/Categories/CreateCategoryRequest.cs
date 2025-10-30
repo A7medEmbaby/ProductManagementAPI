@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ProductManagement.Application.Categories.DTOs;
-
+namespace ProductManagement.Contracts.Categories;
 public record CreateCategoryRequest
 {
     [Required]

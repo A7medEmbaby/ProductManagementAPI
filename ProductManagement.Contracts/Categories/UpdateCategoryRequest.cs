@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace ProductManagement.Contracts.Categories;
-public record CreateCategoryCommand
+public record UpdateCategoryRequest
 {
     [Required]
     [StringLength(100, MinimumLength = 1)]

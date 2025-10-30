@@ -3,8 +3,10 @@ using MediatR;
 using ProductManagement.Application.Categories.Commands;
 using ProductManagement.Application.Categories.Queries;
 using ProductManagement.Application.Categories.DTOs;
-using ProductManagement.Application.Common;
+using ProductManagement.Contracts.Common;
+using ProductManagement.Contracts.Products;
 using System.Net;
+using ProductManagement.Contracts.Categories;
 
 namespace ProductManagement.Api.Controllers;
 

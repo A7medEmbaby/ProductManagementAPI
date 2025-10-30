@@ -1,5 +1,6 @@
 using MediatR;
 using ProductManagement.Application.Categories.DTOs;
+using ProductManagement.Contracts.Categories;
 using ProductManagement.Domain.Categories.ValueObjects;
 
 namespace ProductManagement.Application.Categories.Commands;

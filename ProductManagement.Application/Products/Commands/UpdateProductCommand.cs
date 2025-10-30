@@ -2,6 +2,7 @@ using MediatR;
 using ProductManagement.Application.Products.DTOs;
 using ProductManagement.Domain.Categories.ValueObjects;
 using ProductManagement.Domain.Products.ValueObjects;
+using ProductManagement.Contracts.Products;
 
 namespace ProductManagement.Application.Products.Commands;
 

@@ -5,6 +5,8 @@ using ProductManagement.Application.Products.Queries;
 using ProductManagement.Application.Products.DTOs;
 using ProductManagement.Application.Common;
 using System.Net;
+using ProductManagement.Contracts.Common;
+using ProductManagement.Contracts.Products;
 
 namespace ProductManagement.Api.Controllers;
 

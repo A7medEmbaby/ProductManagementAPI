@@ -1,5 +1,6 @@
 using MediatR;
 using ProductManagement.Application.Products.DTOs;
+using ProductManagement.Contracts.Products;
 using ProductManagement.Domain.Categories.ValueObjects;
 using ProductManagement.Domain.Products.ValueObjects;
 
