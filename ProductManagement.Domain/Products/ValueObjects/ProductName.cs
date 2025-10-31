@@ -2,7 +2,6 @@
 
 namespace ProductManagement.Domain.Products.ValueObjects;
 
-// ⚠️ KEY CHANGE: Inherit from ValueObject instead of record
 public sealed class ProductName : ValueObject
 {
     public string Value { get; private set; }
@@ -21,7 +20,6 @@ public sealed class ProductName : ValueObject
 
     private ProductName() { } // For EF Core
 
-    // ⚠️ NEW: Implement equality based on Value
     public override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;

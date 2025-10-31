@@ -70,10 +70,6 @@ public class ProductsController : ControllerBase
     [HttpPost("CreateProduct")]
     public async Task<ActionResult<APIResponse<ProductResponse>>> CreateProduct([FromBody] CreateProductRequest request)
     {
-        // ✅ REMOVED: ModelState.IsValid check
-        // Validation is now handled automatically by ValidationBehavior before the handler executes
-        // If validation fails, ValidationException will be thrown and caught by ValidationMiddleware
-
         try
         {
             var command = CreateProductCommand.FromRequest(request);
@@ -94,9 +90,6 @@ public class ProductsController : ControllerBase
     [HttpPut("UpdateProductById/{id}")]
     public async Task<ActionResult<APIResponse<ProductResponse>>> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
     {
-        // ✅ REMOVED: ModelState.IsValid check
-        // Validation is now handled automatically by ValidationBehavior
-
         try
         {
             var command = UpdateProductCommand.FromRequest(id, request);
@@ -128,6 +121,131 @@ public class ProductsController : ControllerBase
         {
             var errorResponse = new APIResponse<string>(HttpStatusCode.NotFound, ex.Message);
             return NotFound(errorResponse);
+        }
+    }
+
+    /// <summary>
+    /// Add stock to a product
+    /// </summary>
+    [HttpPost("AddProductStockById/{id}")]
+    public async Task<ActionResult<APIResponse<ProductResponse>>> AddStock(Guid id, [FromBody] AddStockRequest request)
+    {
+        try
+        {
+            var command = new AddStockCommand(id, request.Quantity);
+            var result = await _mediator.Send(command);
+            var response = new APIResponse<ProductResponse>(HttpStatusCode.OK, result, "Stock added successfully");
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, ex.Message);
+            return BadRequest(errorResponse);
+        }
+    }
+
+    /// <summary>
+    /// Deduct stock from a product
+    /// </summary>
+    [HttpPost("DeductProductStockById/{id}")]
+    public async Task<ActionResult<APIResponse<ProductResponse>>> DeductStock(Guid id, [FromBody] AddStockRequest request)
+    {
+        try
+        {
+            var command = new DeductStockCommand(id, request.Quantity);
+            var result = await _mediator.Send(command);
+            var response = new APIResponse<ProductResponse>(HttpStatusCode.OK, result, "Stock deducted successfully");
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, ex.Message);
+            return BadRequest(errorResponse);
+        }
+    }
+
+    /// <summary>
+    /// Reserve stock for a product
+    /// </summary>
+    [HttpPost("ReserveProductStockById/{id}")]
+    public async Task<ActionResult<APIResponse<ProductResponse>>> ReserveStock(Guid id, [FromBody] AddStockRequest request)
+    {
+        try
+        {
+            var command = new ReserveStockCommand(id, request.Quantity);
+            var result = await _mediator.Send(command);
+            var response = new APIResponse<ProductResponse>(HttpStatusCode.OK, result, "Stock reserved successfully");
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, ex.Message);
+            return BadRequest(errorResponse);
+        }
+    }
+
+    /// <summary>
+    /// Release reserved stock for a product
+    /// </summary>
+    [HttpPost("ReleaseProductStockById/{id}")]
+    public async Task<ActionResult<APIResponse<ProductResponse>>> ReleaseStock(Guid id, [FromBody] AddStockRequest request)
+    {
+        try
+        {
+            var command = new ReleaseStockCommand(id, request.Quantity);
+            var result = await _mediator.Send(command);
+            var response = new APIResponse<ProductResponse>(HttpStatusCode.OK, result, "Stock released successfully");
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, ex.Message);
+            return BadRequest(errorResponse);
+        }
+    }
+
+    /// <summary>
+    /// Update stock quantity for a product
+    /// </summary>
+    [HttpPut("UpdateProductStockById/{id}")]
+    public async Task<ActionResult<APIResponse<ProductResponse>>> UpdateStock(Guid id, [FromBody] UpdateStockRequest request)
+    {
+        try
+        {
+            var command = new UpdateStockCommand(id, request.NewQuantity);
+            var result = await _mediator.Send(command);
+            var response = new APIResponse<ProductResponse>(HttpStatusCode.OK, result, "Stock updated successfully");
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.NotFound, ex.Message);
+            return NotFound(errorResponse);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var errorResponse = new APIResponse<ProductResponse>(HttpStatusCode.BadRequest, ex.Message);
+            return BadRequest(errorResponse);
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace ProductManagement.Contracts.Products;
+
 public record CreateProductRequest
 {
     [Required]
@@ -16,4 +17,7 @@ public record CreateProductRequest
 
     [StringLength(3, MinimumLength = 3)]
     public string Currency { get; init; } = "USD";
+
+    [Range(0, int.MaxValue, ErrorMessage = "Initial stock cannot be negative")]
+    public int InitialStock { get; init; } = 0;
 }

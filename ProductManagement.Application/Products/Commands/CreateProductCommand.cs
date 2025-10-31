@@ -10,13 +10,14 @@ public record CreateProductCommand(
     string Name,
     Guid CategoryId,
     decimal Price,
-    string Currency = "USD"
+    string Currency = "USD",
+    int InitialStock = 0
 ) : IRequest<ProductResponse>
 {
     public static CreateProductCommand FromRequest(CreateProductRequest request)
-        => new(request.Name, request.CategoryId, request.Price, request.Currency);
+        => new(request.Name, request.CategoryId, request.Price, request.Currency, request.InitialStock);
 
     public ProductName GetProductName() => new(Name);
-    public Domain.Categories.ValueObjects.CategoryId GetCategoryId() => Domain.Categories.ValueObjects.CategoryId.Create(CategoryId);
+    public CategoryId GetCategoryId() => Domain.Categories.ValueObjects.CategoryId.Create(CategoryId);
     public Money GetPrice() => new(Price, Currency);
 }

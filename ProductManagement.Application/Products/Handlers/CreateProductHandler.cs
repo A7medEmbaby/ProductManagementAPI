@@ -24,11 +24,16 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
         if (!categoryExists)
             throw new ArgumentException($"Category with ID {request.CategoryId} does not exist");
 
-        // Create product
+        // Validate initial stock
+        if (request.InitialStock < 0)
+            throw new ArgumentException("Initial stock cannot be negative");
+
+        // Create product with initial stock
         var product = Product.Create(
             request.GetProductName(),
             request.GetCategoryId(),
-            request.GetPrice()
+            request.GetPrice(),
+            request.InitialStock
         );
 
         // Save product

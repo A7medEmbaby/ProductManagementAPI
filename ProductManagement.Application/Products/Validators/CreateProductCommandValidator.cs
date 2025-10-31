@@ -21,5 +21,8 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
             .NotEmpty().WithMessage("Currency is required")
             .Length(3).WithMessage("Currency must be 3 characters long")
             .Matches("^[A-Z]{3}$").WithMessage("Currency must be 3 uppercase letters");
+
+        RuleFor(x => x.InitialStock)
+            .GreaterThanOrEqualTo(0).WithMessage("Initial stock cannot be negative");
     }
 }

@@ -6,6 +6,9 @@ public record ProductResponse(
     Guid CategoryId,
     decimal Price,
     string Currency,
+    int StockQuantity,
+    int ReservedQuantity,
+    int AvailableQuantity,
     DateTime CreatedAt,
     DateTime? UpdatedAt
 );
@@ -19,6 +22,9 @@ public static class ProductExtensions
             product.CategoryId.Value,
             product.Price.Amount,
             product.Price.Currency,
+            product.Stock.Quantity,
+            product.Stock.ReservedQuantity,
+            product.Stock.AvailableQuantity,
             product.CreatedAt,
             product.UpdatedAt
         );
