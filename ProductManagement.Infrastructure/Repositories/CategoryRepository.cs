@@ -3,7 +3,7 @@ using ProductManagement.Domain.Categories;
 using ProductManagement.Domain.Categories.ValueObjects;
 using ProductManagement.Application.Categories;
 
-namespace ProductManagement.Infrastructure.Data.Repositories;
+namespace ProductManagement.Infrastructure.Repositories;
 
 public class CategoryRepository : ICategoryRepository
 {

@@ -14,46 +14,41 @@ public class PublishDomainEventsInterceptor : SaveChangesInterceptor
         _publisher = publisher;
     }
 
-    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
-        DbContextEventData eventData,
-        InterceptionResult<int> result,
-        CancellationToken cancellationToken = default)
+    public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
-        await PublishDomainEventsAsync(eventData.Context, cancellationToken);
-        return await base.SavingChangesAsync(eventData, result, cancellationToken);
-    }
-
-    public override InterceptionResult<int> SavingChanges(
-        DbContextEventData eventData,
-        InterceptionResult<int> result)
-    {
-        PublishDomainEventsAsync(eventData.Context).GetAwaiter().GetResult();
+        PublishDomainEvents(eventData.Context).GetAwaiter().GetResult();
         return base.SavingChanges(eventData, result);
     }
 
-    private async Task PublishDomainEventsAsync(DbContext? dbContext, CancellationToken cancellationToken = default)
+    public async override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+    {
+        await PublishDomainEvents(eventData.Context);
+        return await base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
+    private async Task PublishDomainEvents(DbContext? dbContext)
     {
         if (dbContext is null)
+        {
             return;
+        }
 
-        var entitiesWithEvents = dbContext.ChangeTracker
-            .Entries<IHasDomainEvents>()
+        // get hold  of all various entities
+        var entitiesWithDomainEvents = dbContext.ChangeTracker.Entries<IHasDomainEvents>()
             .Where(entry => entry.Entity.DomainEvents.Any())
             .Select(entry => entry.Entity)
             .ToList();
 
-        if (!entitiesWithEvents.Any())
-            return;
+        // get hold of all various domain events
+        var domainEvents = entitiesWithDomainEvents.SelectMany(e => e.DomainEvents).ToList();
 
-        var domainEvents = entitiesWithEvents
-            .SelectMany(entity => entity.DomainEvents)
-            .ToList();
+        // clear domain events
+        entitiesWithDomainEvents.ForEach(entity => entity.ClearDomainEvents());
 
-        entitiesWithEvents.ForEach(entity => entity.ClearDomainEvents());
-
-        foreach (var domainEvent in domainEvents)
+        // publish domain events
+        foreach ( var domainEvent in domainEvents)
         {
-            await _publisher.Publish(domainEvent, cancellationToken);
+            await _publisher.Publish(domainEvent); 
         }
     }
 }

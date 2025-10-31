@@ -3,9 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProductManagement.Application.Categories;
 using ProductManagement.Application.Products;
-using ProductManagement.Infrastructure.Data;
-using ProductManagement.Infrastructure.Data.Repositories;
 using ProductManagement.Infrastructure.Persistence.Interceptors;
+using ProductManagement.Infrastructure.Repositories;
 
 namespace ProductManagement.Infrastructure;
 

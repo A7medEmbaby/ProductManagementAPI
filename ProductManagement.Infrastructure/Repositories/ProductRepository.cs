@@ -4,7 +4,7 @@ using ProductManagement.Domain.Products;
 using ProductManagement.Application.Products;
 using ProductManagement.Domain.Products.ValueObjects;
 
-namespace ProductManagement.Infrastructure.Data.Repositories;
+namespace ProductManagement.Infrastructure.Repositories;
 
 public class ProductRepository : IProductRepository
 {
