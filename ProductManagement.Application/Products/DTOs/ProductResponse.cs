@@ -1,3 +1,5 @@
+using ProductManagement.Domain.Categories;
+
 namespace ProductManagement.Application.Products.DTOs;
 
 public record ProductResponse(
@@ -17,7 +19,7 @@ public static class ProductExtensions
 {
     public static ProductResponse ToResponse(this Domain.Products.Product product)
         => new(
-            product.Id.Value,
+            ((Domain.Common.ValueObjects.ProductId)product.AggregateId).Value,
             product.Name.Value,
             product.CategoryId.Value,
             product.Price.Amount,

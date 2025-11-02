@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProductManagement.Domain.Products;
 using ProductManagement.Domain.Products.ValueObjects;
 using ProductManagement.Domain.Categories.ValueObjects;
+using ProductManagement.Domain.Common.ValueObjects;
 
 namespace ProductManagement.Infrastructure.Configurations;
 
@@ -12,10 +13,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
         builder.ToTable("Products");
 
-        builder.HasKey(p => p.Id);
+        builder.HasKey(p => p.AggregateId);
+        builder.Ignore(p => p.Id); // Ignore inherited Id property from Entity<TId>
 
-        builder.Property(p => p.Id)
+        builder.Property(p => p.AggregateId)
             .ValueGeneratedNever()
+            .HasColumnName("Id")
             .HasConversion(
                 id => id.Value,                  // To DB: Extract Guid from AggregateRootId
                 value => ProductId.Create(value)); // From DB: Create ProductId from Guid
@@ -42,6 +45,20 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             price.Property(p => p.Currency)
                 .HasColumnName("PriceCurrency")
                 .HasMaxLength(3)
+                .IsRequired();
+        });
+
+        // Stock value object
+        builder.OwnsOne(p => p.Stock, stockBuilder =>
+        {
+            stockBuilder.Property(p => p.Quantity)
+                .HasColumnName("StockQuantity")
+                .HasColumnType("int")
+                .IsRequired();
+
+            stockBuilder.Property(p => p.ReservedQuantity)
+                .HasColumnName("StockReservedQuantity")
+                .HasColumnType("int")
                 .IsRequired();
         });
 

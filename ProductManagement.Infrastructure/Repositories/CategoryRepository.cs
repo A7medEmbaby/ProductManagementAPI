@@ -17,7 +17,7 @@ public class CategoryRepository : ICategoryRepository
     public async Task<Category?> GetByIdAsync(CategoryId id, CancellationToken cancellationToken = default)
     {
         return await _context.Categories
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(c => c.AggregateId == id, cancellationToken);
     }
 
     public async Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public class CategoryRepository : ICategoryRepository
     public async Task<bool> ExistsAsync(CategoryId id, CancellationToken cancellationToken = default)
     {
         return await _context.Categories
-            .AnyAsync(c => c.Id == id, cancellationToken);
+            .AnyAsync(c => c.AggregateId == id, cancellationToken);
     }
 
     public async Task<bool> ExistsByNameAsync(CategoryName name, CancellationToken cancellationToken = default)
@@ -41,7 +41,7 @@ public class CategoryRepository : ICategoryRepository
     public async Task<bool> ExistsByNameAsync(CategoryName name, CategoryId excludeId, CancellationToken cancellationToken = default)
     {
         return await _context.Categories
-            .AnyAsync(c => c.Name == name && c.Id != excludeId, cancellationToken);
+            .AnyAsync(c => c.Name == name && c.AggregateId != excludeId, cancellationToken);
     }
 
     public async Task AddAsync(Category category, CancellationToken cancellationToken = default)

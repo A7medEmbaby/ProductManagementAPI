@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProductManagement.Domain.Categories.ValueObjects;
 using ProductManagement.Domain.Products;
 using ProductManagement.Application.Products;
-using ProductManagement.Domain.Products.ValueObjects;
+using ProductManagement.Domain.Common.ValueObjects;
 
 namespace ProductManagement.Infrastructure.Repositories;
 
@@ -18,7 +18,7 @@ public class ProductRepository : IProductRepository
     public async Task<Product?> GetByIdAsync(ProductId id, CancellationToken cancellationToken = default)
     {
         return await _context.Products
-            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(p => p.AggregateId == id, cancellationToken);
     }
 
     public async Task<List<Product>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -53,7 +53,7 @@ public class ProductRepository : IProductRepository
     public async Task<bool> ExistsAsync(ProductId id, CancellationToken cancellationToken = default)
     {
         return await _context.Products
-            .AnyAsync(p => p.Id == id, cancellationToken);
+            .AnyAsync(p => p.AggregateId == id, cancellationToken);
     }
 
     public async Task AddAsync(Product product, CancellationToken cancellationToken = default)

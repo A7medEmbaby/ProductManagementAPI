@@ -19,10 +19,5 @@ public sealed class CategoryId : AggregateRootId<Guid>
 
     public static CategoryId Empty => new(Guid.Empty);
 
-    public override IEnumerable<object> GetEqualityComponents()
-    {
-        yield return Value;
-    }
-
     public static implicit operator Guid(CategoryId categoryId) => categoryId.Value;
 }

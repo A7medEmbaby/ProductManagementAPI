@@ -40,7 +40,7 @@ public class Category : AggregateRoot<CategoryId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(CategoryUpdatedEvent.Create(
-            CategoryId.Create(((AggregateRootId<Guid>)Id).Value),
+            (CategoryId)AggregateId,
             oldName,
             newName));
     }
@@ -63,7 +63,7 @@ public class Category : AggregateRoot<CategoryId, Guid>
     public void Delete()
     {
         RaiseDomainEvent(CategoryDeletedEvent.Create(
-            CategoryId.Create(((AggregateRootId<Guid>)Id).Value),
+            (CategoryId)AggregateId,
             Name));
     }
 }

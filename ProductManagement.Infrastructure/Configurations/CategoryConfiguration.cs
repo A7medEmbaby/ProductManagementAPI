@@ -11,9 +11,11 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.ToTable("Categories");
 
-        builder.HasKey(c => c.Id);
+        builder.HasKey(c => c.AggregateId);
+        builder.Ignore(c => c.Id); // Ignore inherited Id property from Entity<TId>
 
-        builder.Property(c => c.Id)
+        builder.Property(c => c.AggregateId)
+            .HasColumnName("Id")
             .ValueGeneratedNever()
             .HasConversion(
                 id => id.Value,                    // To DB: Extract Guid from AggregateRootId

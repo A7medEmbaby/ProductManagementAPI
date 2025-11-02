@@ -1,10 +1,10 @@
 using MediatR;
 using ProductManagement.Application.Products.DTOs;
-using ProductManagement.Domain.Products.ValueObjects;
+using ProductManagement.Domain.Common.ValueObjects;
 
 namespace ProductManagement.Application.Products.Queries;
 
 public record GetProductQuery(Guid ProductId) : IRequest<ProductResponse?>
 {
-    public Domain.Products.ValueObjects.ProductId GetProductId() => Domain.Products.ValueObjects.ProductId.Create(ProductId);
+    public ProductId GetProductId() => Domain.Common.ValueObjects.ProductId.Create(ProductId);
 }

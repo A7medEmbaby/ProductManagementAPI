@@ -1,9 +1,9 @@
 using MediatR;
-using ProductManagement.Domain.Products.ValueObjects;
+using ProductManagement.Domain.Common.ValueObjects;
 
 namespace ProductManagement.Application.Products.Commands;
 
 public record DeleteProductCommand(Guid ProductId) : IRequest<Unit>
 {
-    public Domain.Products.ValueObjects.ProductId GetProductId() => Domain.Products.ValueObjects.ProductId.Create(ProductId);
+    public ProductId GetProductId() => Domain.Common.ValueObjects.ProductId.Create(ProductId);
 }

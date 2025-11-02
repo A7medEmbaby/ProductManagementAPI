@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using ProductManagement.Infrastructure;
 
 #nullable disable
 
@@ -18,8 +19,9 @@ namespace ProductManagement.Infrastructure.Migrations
 
             modelBuilder.Entity("ProductManagement.Domain.Categories.Category", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("AggregateId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
@@ -37,7 +39,7 @@ namespace ProductManagement.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Id");
+                    b.HasKey("AggregateId");
 
                     b.HasIndex("CreatedAt");
 
@@ -49,10 +51,48 @@ namespace ProductManagement.Infrastructure.Migrations
                     b.ToTable("Categories", (string)null);
                 });
 
+            modelBuilder.Entity("ProductManagement.Domain.Orders.Order", b =>
+                {
+                    b.Property<Guid>("AggregateId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Id");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("AggregateId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Orders", (string)null);
+                });
+
             modelBuilder.Entity("ProductManagement.Domain.Products.Product", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("AggregateId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Id");
 
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("TEXT");
@@ -68,7 +108,7 @@ namespace ProductManagement.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Id");
+                    b.HasKey("AggregateId");
 
                     b.HasIndex("CategoryId");
 
@@ -77,11 +117,72 @@ namespace ProductManagement.Infrastructure.Migrations
                     b.ToTable("Products", (string)null);
                 });
 
+            modelBuilder.Entity("ProductManagement.Domain.Orders.Order", b =>
+                {
+                    b.OwnsMany("ProductManagement.Domain.Orders.OrderItem", "Items", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<Guid>("OrderId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<Guid>("ProductId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("ProductName")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("Quantity")
+                                .HasColumnType("INTEGER");
+
+                            b1.HasKey("Id", "OrderId");
+
+                            b1.HasIndex("OrderId");
+
+                            b1.ToTable("OrderItems", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("OrderId");
+
+                            b1.OwnsOne("ProductManagement.Domain.Products.ValueObjects.Money", "UnitPrice", b2 =>
+                                {
+                                    b2.Property<Guid>("OrderItemId")
+                                        .HasColumnType("TEXT");
+
+                                    b2.Property<Guid>("OrderItemOrderId")
+                                        .HasColumnType("TEXT");
+
+                                    b2.Property<decimal>("Amount")
+                                        .HasColumnType("decimal(18,2)")
+                                        .HasColumnName("UnitPriceAmount");
+
+                                    b2.Property<string>("Currency")
+                                        .IsRequired()
+                                        .HasColumnType("TEXT")
+                                        .HasColumnName("UnitPriceCurrency");
+
+                                    b2.HasKey("OrderItemId", "OrderItemOrderId");
+
+                                    b2.ToTable("OrderItems");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("OrderItemId", "OrderItemOrderId");
+                                });
+
+                            b1.Navigation("UnitPrice")
+                                .IsRequired();
+                        });
+
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("ProductManagement.Domain.Products.Product", b =>
                 {
                     b.OwnsOne("ProductManagement.Domain.Products.ValueObjects.Money", "Price", b1 =>
                         {
-                            b1.Property<Guid>("ProductId")
+                            b1.Property<Guid>("ProductAggregateId")
                                 .HasColumnType("TEXT");
 
                             b1.Property<decimal>("Amount")
@@ -94,15 +195,39 @@ namespace ProductManagement.Infrastructure.Migrations
                                 .HasColumnType("TEXT")
                                 .HasColumnName("PriceCurrency");
 
-                            b1.HasKey("ProductId");
+                            b1.HasKey("ProductAggregateId");
 
                             b1.ToTable("Products");
 
                             b1.WithOwner()
-                                .HasForeignKey("ProductId");
+                                .HasForeignKey("ProductAggregateId");
+                        });
+
+                    b.OwnsOne("ProductManagement.Domain.Products.ValueObjects.Stock", "Stock", b1 =>
+                        {
+                            b1.Property<Guid>("ProductAggregateId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("Quantity")
+                                .HasColumnType("int")
+                                .HasColumnName("StockQuantity");
+
+                            b1.Property<int>("ReservedQuantity")
+                                .HasColumnType("int")
+                                .HasColumnName("StockReservedQuantity");
+
+                            b1.HasKey("ProductAggregateId");
+
+                            b1.ToTable("Products");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProductAggregateId");
                         });
 
                     b.Navigation("Price")
+                        .IsRequired();
+
+                    b.Navigation("Stock")
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

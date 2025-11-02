@@ -2,6 +2,7 @@
 using ProductManagement.Domain.Categories.ValueObjects;
 using ProductManagement.Domain.Products.Events;
 using ProductManagement.Domain.Common.Models;
+using ProductManagement.Domain.Common.ValueObjects;
 
 namespace ProductManagement.Domain.Products;
 
@@ -46,7 +47,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(ProductUpdatedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             Name,
             Price));
     }
@@ -59,7 +60,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(ProductUpdatedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             Name,
             Price));
     }
@@ -73,7 +74,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(ProductCategoryChangedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             oldCategoryId,
             newCategoryId));
     }
@@ -87,7 +88,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(StockReservedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             quantity,
             Stock.AvailableQuantity));
     }
@@ -101,7 +102,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(StockReleasedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             quantity,
             Stock.AvailableQuantity));
     }
@@ -115,7 +116,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(StockDeductedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             quantity,
             Stock.Quantity));
     }
@@ -129,7 +130,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(StockAddedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             quantity,
             Stock.Quantity));
     }
@@ -144,7 +145,7 @@ public class Product : AggregateRoot<ProductId, Guid>
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(StockUpdatedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             oldQuantity,
             newQuantity));
     }
@@ -157,7 +158,7 @@ public class Product : AggregateRoot<ProductId, Guid>
     public void Delete()
     {
         RaiseDomainEvent(ProductDeletedEvent.Create(
-            ProductId.Create(((AggregateRootId<Guid>)Id).Value),
+            (ProductId)AggregateId,
             CategoryId));
     }
 }

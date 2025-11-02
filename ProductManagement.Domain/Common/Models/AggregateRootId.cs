@@ -6,5 +6,14 @@ public abstract class AggregateRootId<TValue> : ValueObject
 
     protected AggregateRootId() { } // For EF Core
 
+    /// <summary>
+    /// Implements equality comparison based on the Value property.
+    /// All derived IDs are equal if their Value is equal.
+    /// </summary>
+    public override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Value;
+    }
+
     public override string ToString() => Value?.ToString() ?? string.Empty;
 }

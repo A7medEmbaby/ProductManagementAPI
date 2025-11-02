@@ -369,3 +369,6 @@ FodyWeavers.xsd
 # Claude Code
 .claude/
 CLAUDE.md
+
+# Gemini CLI
+GEMINI.md

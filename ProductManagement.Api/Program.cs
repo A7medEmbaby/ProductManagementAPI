@@ -1,3 +1,4 @@
+using ProductManagement.Api.BackgroundServices;
 using ProductManagement.Api.Middleware;
 using ProductManagement.Application;
 using ProductManagement.Infrastructure;
@@ -26,8 +27,14 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services
-    .AddApplication()                              // Application layer
+    .AddApplication(builder.Configuration)          // Application layer
     .AddInfrastructure(builder.Configuration);     // Infrastructure layer
+
+// Background Services for RabbitMQ Consumers
+builder.Services.AddHostedService<OrderCreationBackgroundService>();
+builder.Services.AddHostedService<StockDeductionBackgroundService>();
+builder.Services.AddHostedService<CartClearingBackgroundService>();
+
 
 var app = builder.Build();
 

@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using ProductManagement.Application.Products.DTOs;
+using ProductManagement.Domain.Common.ValueObjects;
 
 namespace ProductManagement.Application.Products.Commands;
 
@@ -8,6 +9,6 @@ public record ReleaseStockCommand(
     int Quantity
 ) : IRequest<ProductResponse>
 {
-    public Domain.Products.ValueObjects.ProductId GetProductId()
-        => Domain.Products.ValueObjects.ProductId.Create(ProductId);
+    public ProductId GetProductId()
+        => Domain.Common.ValueObjects.ProductId.Create(ProductId);
 }

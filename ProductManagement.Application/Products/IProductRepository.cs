@@ -1,6 +1,6 @@
 using ProductManagement.Domain.Products;
-using ProductManagement.Domain.Products.ValueObjects;
 using ProductManagement.Domain.Categories.ValueObjects;
+using ProductManagement.Domain.Common.ValueObjects;
 
 namespace ProductManagement.Application.Products;
 
