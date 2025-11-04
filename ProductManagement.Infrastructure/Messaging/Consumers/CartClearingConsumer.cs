@@ -1,50 +1,40 @@
-﻿using MediatR;
-using Microsoft.Extensions.DependencyInjection;
+using MassTransit;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ProductManagement.Application.Cart.Commands;
 using ProductManagement.Application.IntegrationEvents;
-using ProductManagement.Application.Settings;
 
 namespace ProductManagement.Infrastructure.Messaging.Consumers;
 
-public class CartClearingConsumer : RabbitMQConsumerBase<OrderCreatedIntegrationEvent>
+public class CartClearingConsumer : IConsumer<OrderCreatedIntegrationEvent>
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly RabbitMQSettings _settings;
-
-    protected override string QueueName => _settings.Queues.CartClearing;
-    protected override string ExchangeName => _settings.Exchanges.OrderEvents;
-    protected override string RoutingKey => _settings.RoutingKeys.OrderCreated;
+    private readonly IMediator _mediator;
+    private readonly ILogger<CartClearingConsumer> _logger;
 
     public CartClearingConsumer(
-        RabbitMQConnectionFactory connectionFactory,
-        IOptions<RabbitMQSettings> settings,
-        IServiceProvider serviceProvider,
+        IMediator mediator,
         ILogger<CartClearingConsumer> logger)
-        : base(connectionFactory, settings, logger)
     {
-        _serviceProvider = serviceProvider;
-        _settings = settings.Value;
+        _mediator = mediator;
+        _logger = logger;
     }
 
-    protected override async Task ProcessMessageAsync(OrderCreatedIntegrationEvent message)
+    public async Task Consume(ConsumeContext<OrderCreatedIntegrationEvent> context)
     {
-        Logger.LogInformation(
+        var message = context.Message;
+
+        _logger.LogInformation(
             "Processing cart clearing for user. UserId: {UserId}, OrderId: {OrderId}",
             message.UserId,
             message.OrderId);
-
-        using var scope = _serviceProvider.CreateScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         // Clear cart command
         var command = new ClearCartCommand(message.UserId);
 
         // Execute command
-        await mediator.Send(command);
+        await _mediator.Send(command);
 
-        Logger.LogInformation(
+        _logger.LogInformation(
             "Cart cleared successfully. UserId: {UserId}, OrderId: {OrderId}",
             message.UserId,
             message.OrderId);

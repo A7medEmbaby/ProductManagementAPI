@@ -1,26 +1,21 @@
-﻿using MediatR;
+using MassTransit;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ProductManagement.Application.IntegrationEvents;
-using ProductManagement.Application.Messaging;
-using ProductManagement.Application.Settings;
 using ProductManagement.Domain.Cart.Events;
 
 namespace ProductManagement.Application.Cart.EventHandlers;
 
 public class CartCheckedOutEventHandler : INotificationHandler<CartCheckedOutEvent>
 {
-    private readonly IMessageBus _messageBus;
-    private readonly RabbitMQSettings _settings;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<CartCheckedOutEventHandler> _logger;
 
     public CartCheckedOutEventHandler(
-        IMessageBus messageBus,
-        IOptions<RabbitMQSettings> settings,
+        IPublishEndpoint publishEndpoint,
         ILogger<CartCheckedOutEventHandler> logger)
     {
-        _messageBus = messageBus;
-        _settings = settings.Value;
+        _publishEndpoint = publishEndpoint;
         _logger = logger;
     }
 
@@ -52,12 +47,8 @@ public class CartCheckedOutEventHandler : INotificationHandler<CartCheckedOutEve
             OccurredAt = notification.OccurredAt
         };
 
-        // Publish to RabbitMQ
-        await _messageBus.PublishAsync(
-            integrationEvent,
-            _settings.Exchanges.CartEvents,
-            _settings.RoutingKeys.CartCheckedOut,
-            cancellationToken);
+        // Publish via MassTransit
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
 
         _logger.LogInformation(
             "Published CartCheckedOutIntegrationEvent: EventId={EventId}",

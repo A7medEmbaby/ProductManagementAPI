@@ -1,26 +1,21 @@
-﻿using MediatR;
+using MassTransit;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ProductManagement.Application.IntegrationEvents;
-using ProductManagement.Application.Messaging;
-using ProductManagement.Application.Settings;
 using ProductManagement.Domain.Orders.Events;
 
 namespace ProductManagement.Application.Orders.EventHandlers;
 
 public class OrderCreatedEventHandler : INotificationHandler<OrderCreatedEvent>
 {
-    private readonly IMessageBus _messageBus;
-    private readonly RabbitMQSettings _settings;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<OrderCreatedEventHandler> _logger;
 
     public OrderCreatedEventHandler(
-        IMessageBus messageBus,
-        IOptions<RabbitMQSettings> settings,
+        IPublishEndpoint publishEndpoint,
         ILogger<OrderCreatedEventHandler> logger)
     {
-        _messageBus = messageBus;
-        _settings = settings.Value;
+        _publishEndpoint = publishEndpoint;
         _logger = logger;
     }
 
@@ -52,12 +47,8 @@ public class OrderCreatedEventHandler : INotificationHandler<OrderCreatedEvent>
             OccurredAt = notification.OccurredAt
         };
 
-        // Publish to RabbitMQ
-        await _messageBus.PublishAsync(
-            integrationEvent,
-            _settings.Exchanges.OrderEvents,
-            _settings.RoutingKeys.OrderCreated,
-            cancellationToken);
+        // Publish via MassTransit
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
 
         _logger.LogInformation(
             "Published OrderCreatedIntegrationEvent: EventId={EventId}",

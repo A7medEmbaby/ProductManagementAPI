@@ -1,12 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProductManagement.Application.Cart;
 using ProductManagement.Application.Categories;
-using ProductManagement.Application.Messaging;
 using ProductManagement.Application.Orders;
 using ProductManagement.Application.Products;
-using ProductManagement.Infrastructure.Messaging;
 using ProductManagement.Infrastructure.Messaging.Consumers;
 using ProductManagement.Infrastructure.Persistence.Interceptors;
 using ProductManagement.Infrastructure.Repositories;
@@ -39,20 +38,39 @@ public static class DependencyInjection
         services.AddSingleton<ICartRepository, InMemoryCartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
 
+        // MassTransit Configuration
+        services.AddMassTransit(x =>
+        {
+            // Register consumers
+            x.AddConsumer<OrderCreationConsumer>();
+            x.AddConsumer<StockDeductionConsumer>();
+            x.AddConsumer<CartClearingConsumer>();
 
-        // Register Cart Repository as Singleton (in-memory)
-        services.AddSingleton<ICartRepository, InMemoryCartRepository>();
+            // Configure RabbitMQ transport
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                var host = configuration["RabbitMQ:Host"] ?? "rabbitmq://localhost";
+                var username = configuration["RabbitMQ:Username"] ?? "guest";
+                var password = configuration["RabbitMQ:Password"] ?? "guest";
 
-        // RabbitMQ Connection Factory
-        services.AddSingleton<RabbitMQConnectionFactory>();
+                cfg.Host(host, h =>
+                {
+                    h.Username(username);
+                    h.Password(password);
+                });
 
-        // Message Bus
-        services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
+                // Configure retry policy (3 attempts with exponential backoff)
+                cfg.UseMessageRetry(r => r.Exponential(
+                    retryLimit: 3,
+                    minInterval: TimeSpan.FromSeconds(1),
+                    maxInterval: TimeSpan.FromSeconds(4),
+                    intervalDelta: TimeSpan.FromSeconds(1)
+                ));
 
-        // Consumers (Scoped for use in background services)
-        services.AddScoped<OrderCreationConsumer>();
-        services.AddScoped<StockDeductionConsumer>();
-        services.AddScoped<CartClearingConsumer>();
+                // Configure endpoints for consumers
+                cfg.ConfigureEndpoints(context);
+            });
+        });
 
         return services;
     }

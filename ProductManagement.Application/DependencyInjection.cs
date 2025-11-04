@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProductManagement.Application.Common.Behaviors;
-using ProductManagement.Application.Settings;
 using System.Reflection;
 
 namespace ProductManagement.Application;
@@ -24,12 +23,6 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
-        // Register RabbitMQ Settings
-        services.Configure<RabbitMQSettings>(
-            configuration.GetSection("RabbitMQ")
-        );
-
 
         return services;
     }

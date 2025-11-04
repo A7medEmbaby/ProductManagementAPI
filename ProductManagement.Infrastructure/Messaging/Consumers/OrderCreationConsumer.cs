@@ -1,45 +1,35 @@
-﻿using MediatR;
-using Microsoft.Extensions.DependencyInjection;
+using MassTransit;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ProductManagement.Application.IntegrationEvents;
 using ProductManagement.Application.Orders.Commands;
-using ProductManagement.Application.Settings;
 using ProductManagement.Domain.Common.ValueObjects;
 using ProductManagement.Domain.Orders.Events;
 using ProductManagement.Domain.Products.ValueObjects;
 
 namespace ProductManagement.Infrastructure.Messaging.Consumers;
 
-public class OrderCreationConsumer : RabbitMQConsumerBase<CartCheckedOutIntegrationEvent>
+public class OrderCreationConsumer : IConsumer<CartCheckedOutIntegrationEvent>
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly RabbitMQSettings _settings;
-
-    protected override string QueueName => _settings.Queues.OrderCreation;
-    protected override string ExchangeName => _settings.Exchanges.CartEvents;
-    protected override string RoutingKey => _settings.RoutingKeys.CartCheckedOut;
+    private readonly IMediator _mediator;
+    private readonly ILogger<OrderCreationConsumer> _logger;
 
     public OrderCreationConsumer(
-        RabbitMQConnectionFactory connectionFactory,
-        IOptions<RabbitMQSettings> settings,
-        IServiceProvider serviceProvider,
+        IMediator mediator,
         ILogger<OrderCreationConsumer> logger)
-        : base(connectionFactory, settings, logger)
     {
-        _serviceProvider = serviceProvider;
-        _settings = settings.Value;
+        _mediator = mediator;
+        _logger = logger;
     }
 
-    protected override async Task ProcessMessageAsync(CartCheckedOutIntegrationEvent message)
+    public async Task Consume(ConsumeContext<CartCheckedOutIntegrationEvent> context)
     {
-        Logger.LogInformation(
+        var message = context.Message;
+
+        _logger.LogInformation(
             "Processing cart checkout for order creation. UserId: {UserId}, CartId: {CartId}",
             message.UserId,
             message.CartId);
-
-        using var scope = _serviceProvider.CreateScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         // Map integration event to order items
         var orderItems = message.Items.Select(item => new OrderItemData(
@@ -53,9 +43,9 @@ public class OrderCreationConsumer : RabbitMQConsumerBase<CartCheckedOutIntegrat
         var command = new CreateOrderCommand(message.UserId, orderItems);
 
         // Execute command
-        var result = await mediator.Send(command);
+        var result = await _mediator.Send(command);
 
-        Logger.LogInformation(
+        _logger.LogInformation(
             "Order created successfully. OrderId: {OrderId}, UserId: {UserId}",
             result.OrderId,
             message.UserId);

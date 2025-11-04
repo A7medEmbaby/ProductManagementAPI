@@ -1,42 +1,32 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using MassTransit;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ProductManagement.Application.IntegrationEvents;
 using ProductManagement.Application.Products;
-using ProductManagement.Application.Settings;
 using ProductManagement.Domain.Common.ValueObjects;
 
 namespace ProductManagement.Infrastructure.Messaging.Consumers;
 
-public class StockDeductionConsumer : RabbitMQConsumerBase<OrderCreatedIntegrationEvent>
+public class StockDeductionConsumer : IConsumer<OrderCreatedIntegrationEvent>
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly RabbitMQSettings _settings;
-
-    protected override string QueueName => _settings.Queues.StockDeduction;
-    protected override string ExchangeName => _settings.Exchanges.OrderEvents;
-    protected override string RoutingKey => _settings.RoutingKeys.OrderCreated;
+    private readonly IProductRepository _productRepository;
+    private readonly ILogger<StockDeductionConsumer> _logger;
 
     public StockDeductionConsumer(
-        RabbitMQConnectionFactory connectionFactory,
-        IOptions<RabbitMQSettings> settings,
-        IServiceProvider serviceProvider,
+        IProductRepository productRepository,
         ILogger<StockDeductionConsumer> logger)
-        : base(connectionFactory, settings, logger)
     {
-        _serviceProvider = serviceProvider;
-        _settings = settings.Value;
+        _productRepository = productRepository;
+        _logger = logger;
     }
 
-    protected override async Task ProcessMessageAsync(OrderCreatedIntegrationEvent message)
+    public async Task Consume(ConsumeContext<OrderCreatedIntegrationEvent> context)
     {
-        Logger.LogInformation(
+        var message = context.Message;
+
+        _logger.LogInformation(
             "Processing stock deduction for order. OrderId: {OrderId}, Items: {ItemCount}",
             message.OrderId,
             message.Items.Count);
-
-        using var scope = _serviceProvider.CreateScope();
-        var productRepository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
 
         var failedItems = new List<string>();
 
@@ -44,12 +34,12 @@ public class StockDeductionConsumer : RabbitMQConsumerBase<OrderCreatedIntegrati
         {
             try
             {
-                var product = await productRepository.GetByIdAsync(
+                var product = await _productRepository.GetByIdAsync(
                     ProductId.Create(item.ProductId));
 
                 if (product == null)
                 {
-                    Logger.LogWarning(
+                    _logger.LogWarning(
                         "Product not found for stock deduction. ProductId: {ProductId}",
                         item.ProductId);
                     failedItems.Add($"Product {item.ProductId} not found");
@@ -59,7 +49,7 @@ public class StockDeductionConsumer : RabbitMQConsumerBase<OrderCreatedIntegrati
                 // Check if sufficient stock
                 if (!product.HasAvailableStock(item.Quantity))
                 {
-                    Logger.LogWarning(
+                    _logger.LogWarning(
                         "Insufficient stock for product. ProductId: {ProductId}, Required: {Required}, Available: {Available}",
                         item.ProductId,
                         item.Quantity,
@@ -70,16 +60,16 @@ public class StockDeductionConsumer : RabbitMQConsumerBase<OrderCreatedIntegrati
 
                 // Deduct stock
                 product.DeductStock(item.Quantity);
-                await productRepository.UpdateAsync(product);
+                await _productRepository.UpdateAsync(product);
 
-                Logger.LogInformation(
+                _logger.LogInformation(
                     "Stock deducted successfully. ProductId: {ProductId}, Quantity: {Quantity}",
                     item.ProductId,
                     item.Quantity);
             }
             catch (Exception ex)
             {
-                Logger.LogError(
+                _logger.LogError(
                     ex,
                     "Error deducting stock for product. ProductId: {ProductId}",
                     item.ProductId);
@@ -90,14 +80,14 @@ public class StockDeductionConsumer : RabbitMQConsumerBase<OrderCreatedIntegrati
         if (failedItems.Any())
         {
             var errorMessage = string.Join("; ", failedItems);
-            Logger.LogError(
+            _logger.LogError(
                 "Stock deduction completed with errors for order {OrderId}: {Errors}",
                 message.OrderId,
                 errorMessage);
             throw new InvalidOperationException($"Stock deduction failed: {errorMessage}");
         }
 
-        Logger.LogInformation(
+        _logger.LogInformation(
             "Stock deduction completed successfully for order. OrderId: {OrderId}",
             message.OrderId);
     }
