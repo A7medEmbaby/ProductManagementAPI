@@ -46,6 +46,22 @@ public static class DependencyInjection
             x.AddConsumer<StockDeductionConsumer>();
             x.AddConsumer<CartClearingConsumer>();
 
+            // Configure Entity Framework Outbox
+            x.AddEntityFrameworkOutbox<ProductManagementDbContext>(o =>
+            {
+                // Use SQLite lock provider
+                o.UseSqlite();
+
+                // Enable bus outbox for publishing from application layer
+                o.UseBusOutbox();
+
+                // Configure polling intervals (how often to check for pending messages)
+                o.QueryDelay = TimeSpan.FromSeconds(10);
+
+                // Duplicate detection window (for consumers - prevents duplicate processing)
+                o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+            });
+
             // Configure RabbitMQ transport
             x.UsingRabbitMq((context, cfg) =>
             {

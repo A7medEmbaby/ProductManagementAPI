@@ -3,10 +3,11 @@
 ## Table of Contents
 1. [Overview](#overview)
 2. [Current Implementation (MassTransit)](#current-implementation-masstransit)
-3. [How Message Queue Works in Our Implementation](#how-message-queue-works-in-our-implementation)
-4. [Step-by-Step Flow](#step-by-step-flow)
-5. [Old vs New Implementation](#old-vs-new-implementation)
-6. [Architecture Diagrams](#architecture-diagrams)
+3. [Transactional Outbox Pattern](#transactional-outbox-pattern)
+4. [How Message Queue Works in Our Implementation](#how-message-queue-works-in-our-implementation)
+5. [Step-by-Step Flow](#step-by-step-flow)
+6. [Old vs New Implementation](#old-vs-new-implementation)
+7. [Architecture Diagrams](#architecture-diagrams)
 
 ---
 
@@ -20,6 +21,7 @@ The Product Management System uses **RabbitMQ** as the message broker with **Mas
 - **Integration Events**: DTOs that cross bounded contexts via RabbitMQ (e.g., `CartCheckedOutIntegrationEvent`, `OrderCreatedIntegrationEvent`)
 - **Publishers**: Components that send messages to RabbitMQ exchanges
 - **Consumers**: Components that receive and process messages from RabbitMQ queues
+- **Outbox Pattern**: Transactional pattern that ensures messages are reliably delivered even if RabbitMQ is down
 
 ---
 
@@ -29,8 +31,10 @@ The Product Management System uses **RabbitMQ** as the message broker with **Mas
 
 - **Message Broker**: RabbitMQ
 - **Messaging Library**: MassTransit 8.5.5
+- **Outbox Implementation**: MassTransit.EntityFrameworkCore 8.3.7
 - **Transport**: RabbitMQ.Client 7.1.2
-- **Pattern**: Publish/Subscribe with Topic Exchanges
+- **Database**: SQLite (for outbox tables)
+- **Pattern**: Publish/Subscribe with Topic Exchanges + Transactional Outbox
 
 ### Configuration
 
@@ -56,6 +60,22 @@ services.AddMassTransit(x =>
     x.AddConsumer<StockDeductionConsumer>();
     x.AddConsumer<CartClearingConsumer>();
 
+    // Configure Entity Framework Outbox
+    x.AddEntityFrameworkOutbox<ProductManagementDbContext>(o =>
+    {
+        // Use SQLite lock provider
+        o.UseSqlite();
+
+        // Enable bus outbox for publishing from application layer
+        o.UseBusOutbox();
+
+        // Configure polling intervals (how often to check for pending messages)
+        o.QueryDelay = TimeSpan.FromSeconds(10);
+
+        // Duplicate detection window (for consumers - prevents duplicate processing)
+        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(5);
+    });
+
     // Configure RabbitMQ transport
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -77,6 +97,226 @@ services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 });
+```
+
+---
+
+## Transactional Outbox Pattern
+
+### What is the Outbox Pattern?
+
+The **Transactional Outbox Pattern** solves the dual-write problem: ensuring that database changes and message publishing happen atomically. Without this pattern, you risk inconsistent state if the database save succeeds but the message publish fails (or vice versa).
+
+### The Problem (Without Outbox)
+
+```
+Traditional Approach:
+1. Save order to database → SUCCESS ✓
+2. Publish OrderCreatedEvent to RabbitMQ → FAILS ❌ (RabbitMQ is down)
+3. Result: Order exists in database but no message sent
+4. Stock never deducted, cart never cleared → INCONSISTENT STATE ❌
+```
+
+### The Solution (With Outbox)
+
+```
+Outbox Pattern:
+1. Save order to database + Save message to OutboxMessage table → SINGLE TRANSACTION ✓
+2. Transaction commits atomically (both succeed or both fail) ✓
+3. Background worker reads OutboxMessage table ✓
+4. Worker publishes to RabbitMQ (retries until successful) ✓
+5. Result: Guaranteed message delivery ✓
+```
+
+### How It Works in Our Implementation
+
+#### 1. Outbox Database Tables
+
+Three tables are automatically created by MassTransit:
+
+**InboxState Table**:
+- Tracks consumed messages for idempotency
+- Prevents duplicate processing
+- Schema: `MessageId`, `ConsumerId`, `Received`, `Consumed`, `Delivered`
+
+**OutboxMessage Table**:
+- Stores messages to be published
+- Schema: `SequenceNumber`, `MessageId`, `MessageType`, `Body` (JSON), `SentTime`, `EnqueueTime`
+
+**OutboxState Table**:
+- Tracks delivery state and locks
+- Prevents concurrent processing
+- Schema: `OutboxId`, `LockId`, `Created`, `Delivered`
+
+#### 2. Message Buffering Flow
+
+When you call `IPublishEndpoint.Publish()`:
+
+```csharp
+// In CartCheckedOutEventHandler
+await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+// ← Message is NOT sent to RabbitMQ yet!
+// ← Message is buffered in-memory by MassTransit
+```
+
+**What happens**:
+1. MassTransit detects you're inside a DbContext transaction scope
+2. Message is **buffered in-memory** (not in database yet, not in RabbitMQ yet)
+3. Waits for `SaveChangesAsync()` to be called
+
+#### 3. Transaction Commit Flow
+
+When you call `DbContext.SaveChangesAsync()`:
+
+```csharp
+// In InMemoryCartRepository.SaveAsync()
+await dbContext.SaveChangesAsync(cancellationToken);
+// ← THIS is the critical line that activates the outbox!
+```
+
+**What happens**:
+1. EF Core begins a database transaction
+2. MassTransit's outbox interceptor hooks into the transaction
+3. Converts buffered in-memory messages to `OutboxMessage` entities
+4. EF Core writes:
+   - Your domain entities (e.g., Order)
+   - OutboxMessage rows (e.g., CartCheckedOutIntegrationEvent)
+5. Transaction commits **atomically** - either both succeed or both fail
+
+#### 4. Background Delivery Worker
+
+MassTransit runs a background worker that:
+
+```csharp
+// Configuration
+o.QueryDelay = TimeSpan.FromSeconds(10);  // Poll every 10 seconds
+```
+
+**Worker behavior**:
+1. Polls `OutboxMessage` table every 10 seconds
+2. Queries: `SELECT * FROM OutboxMessage WHERE SentTime IS NULL`
+3. For each message:
+   - Publishes to RabbitMQ
+   - On success: Updates `SentTime = NOW()`
+   - On failure: Retries on next poll
+4. Messages are eventually delivered when RabbitMQ comes back online
+
+### Hybrid Cart Implementation
+
+Our cart uses an **in-memory repository** (not EF Core), which creates a challenge for the outbox pattern. We solve this with a hybrid approach:
+
+#### The Challenge
+
+```
+Problem:
+- InMemoryCartRepository doesn't use DbContext
+- No DbContext transaction = Outbox can't capture messages ❌
+- Cart checkout events would bypass outbox
+```
+
+#### The Solution
+
+```csharp
+// In InMemoryCartRepository.SaveAsync()
+public async Task SaveAsync(Cart cart, CancellationToken cancellationToken = default)
+{
+    // 1. Save to in-memory dictionary
+    _carts.AddOrUpdate(cart.UserId.Value, cart, (key, oldValue) => cart);
+
+    // 2. Create scoped service provider
+    using var scope = _serviceProvider.CreateScope();
+    var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ProductManagementDbContext>();
+
+    // 3. Publish domain events (triggers CartCheckedOutEventHandler)
+    foreach (var domainEvent in domainEvents)
+    {
+        await publisher.Publish(domainEvent, cancellationToken);
+        // ← CartCheckedOutEventHandler calls IPublishEndpoint.Publish()
+        // ← Message buffered in-memory by MassTransit
+    }
+
+    // 4. CRITICAL: Commit outbox messages to database
+    await dbContext.SaveChangesAsync(cancellationToken);
+    // ← Writes buffered messages to OutboxMessage table ✓
+}
+```
+
+**Key Points**:
+1. Cart data stays in-memory (fast, ephemeral)
+2. Integration events go through outbox (reliable, durable)
+3. Best of both worlds: performance + reliability
+
+### Cart Checkout with Stock Release
+
+The complete cart checkout flow ensures proper stock management:
+
+```csharp
+// In CheckoutCartHandler
+public async Task<CartResponse> Handle(CheckoutCartCommand request, CancellationToken cancellationToken)
+{
+    // 1. Capture response before clearing
+    var response = cart.ToResponse();
+
+    // 2. Checkout (raises CartCheckedOutEvent)
+    cart.Checkout();
+
+    // 3. Save cart (publishes CartCheckedOutEvent, commits to outbox)
+    await _cartRepository.SaveAsync(cart, cancellationToken);
+
+    // 4. Clear cart items (raises CartClearedEvent to release stock)
+    cart.Clear();
+
+    // 5. Save again (publishes CartClearedEvent, releases reserved stock)
+    await _cartRepository.SaveAsync(cart, cancellationToken);
+
+    // 6. Delete empty cart from repository (free memory)
+    await _cartRepository.DeleteAsync(request.GetUserId(), cancellationToken);
+
+    return response;
+}
+```
+
+**Why two SaveAsync calls?**
+1. First call: Commits `CartCheckedOutIntegrationEvent` to outbox
+2. Second call: Commits `CartClearedEvent` to outbox (releases reserved stock via event handlers)
+3. Finally: Deletes empty cart from memory
+
+This ensures:
+- ✅ Cart is immediately deleted (prevents duplicate checkouts)
+- ✅ Reserved stock is properly released
+- ✅ All events are captured in outbox for reliable delivery
+
+### Benefits of Outbox Pattern
+
+1. **Atomicity**: Messages and data changes commit together
+2. **Reliability**: Messages survive RabbitMQ outages
+3. **Idempotency**: InboxState prevents duplicate processing
+4. **Automatic Retry**: Background worker retries failed deliveries
+5. **Consistency**: No partial state (all or nothing)
+
+### Monitoring the Outbox
+
+**Check pending messages**:
+```sql
+SELECT COUNT(*) FROM OutboxMessage WHERE SentTime IS NULL;
+```
+Should be near zero in steady state (messages delivered within 10 seconds).
+
+**Check delivery lag**:
+```sql
+SELECT AVG((JULIANDAY(SentTime) - JULIANDAY(EnqueueTime)) * 86400) AS AvgLagSeconds
+FROM OutboxMessage
+WHERE SentTime IS NOT NULL;
+```
+Should be ~10 seconds (QueryDelay configuration).
+
+**Check recent messages**:
+```sql
+SELECT MessageType, SentTime, EnqueueTime
+FROM OutboxMessage
+ORDER BY SequenceNumber DESC
+LIMIT 10;
 ```
 
 ---

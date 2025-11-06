@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using ProductManagement.Domain.Categories;
 using ProductManagement.Domain.Common.Models;
@@ -27,6 +28,11 @@ public class ProductManagementDbContext : DbContext
         modelBuilder
             .Ignore<List<IDomainEvent>>()
             .ApplyConfigurationsFromAssembly(typeof(ProductManagementDbContext).Assembly);
+
+        // Add MassTransit outbox entities
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
 
         base.OnModelCreating(modelBuilder);
 

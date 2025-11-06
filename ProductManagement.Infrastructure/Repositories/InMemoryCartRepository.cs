@@ -42,11 +42,17 @@ public class InMemoryCartRepository : ICartRepository
         // Publish domain events using a scoped service provider
         using var scope = _serviceProvider.CreateScope();
         var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ProductManagementDbContext>();
 
         foreach (var domainEvent in domainEvents)
         {
             await publisher.Publish(domainEvent, cancellationToken);
         }
+
+        // CRITICAL: Call SaveChangesAsync to persist MassTransit outbox messages
+        // This commits any integration events published by domain event handlers
+        // (e.g., CartCheckedOutIntegrationEvent from CartCheckedOutEventHandler)
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public Task DeleteAsync(UserId userId, CancellationToken cancellationToken = default)

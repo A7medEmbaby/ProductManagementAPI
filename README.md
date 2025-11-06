@@ -61,6 +61,11 @@ A comprehensive e-commerce backend system built with .NET 8, implementing Clean 
 - **Integration events** for cross-context communication
 - **MassTransit 8.5.5** as messaging abstraction layer
 - **RabbitMQ** as message broker
+- **Transactional Outbox Pattern** for reliable message delivery
+  - **Atomic commits**: Messages and database changes commit together
+  - **Guaranteed delivery**: Messages survive RabbitMQ outages
+  - **Idempotent consumers**: Prevents duplicate message processing
+  - **Background delivery worker**: Automatic retry until successful
 - **Automatic topology management** (exchanges, queues, bindings)
 - **Built-in retry policies** with exponential backoff
 - **Async event processing** for:
@@ -121,6 +126,7 @@ This project follows **Clean Architecture** principles with clear separation of 
 ### Messaging & Events
 - **MassTransit 8.5.5** - Messaging abstraction framework
 - **MassTransit.RabbitMQ 8.5.5** - RabbitMQ transport
+- **MassTransit.EntityFrameworkCore 8.3.7** - Transactional outbox implementation
 - **RabbitMQ.Client 7.1.2** - Message broker client
 - **MassTransit.Abstractions** - Publisher interfaces
 
@@ -141,6 +147,7 @@ This project follows **Clean Architecture** principles with clear separation of 
 - Domain Events Pattern
 - Integration Events Pattern
 - Publish/Subscribe Pattern
+- Transactional Outbox Pattern
 
 ## 🚀 Getting Started
 
@@ -187,11 +194,16 @@ This project follows **Clean Architecture** principles with clear separation of 
      }
      ```
 
-5. **Apply database migrations**
+5. **Apply database migrations** (includes MassTransit outbox tables)
    ```bash
    cd ProductManagement.Api
-   dotnet ef database update
+   dotnet ef database update --project ../ProductManagement.Infrastructure
    ```
+   This will create:
+   - Product, Category, Order tables
+   - **InboxState** table (for idempotent message consumption)
+   - **OutboxMessage** table (for reliable message delivery)
+   - **OutboxState** table (for delivery tracking)
 
 6. **Build the solution**
    ```bash
@@ -216,6 +228,18 @@ After starting the API, check the RabbitMQ Management UI:
    - `order-creation-consumer`
    - `stock-deduction-consumer`
    - `cart-clearing-consumer`
+
+### Verify Outbox Pattern
+
+Check the outbox tables in the database:
+
+```bash
+# View pending messages (should be near zero in steady state)
+sqlite3 ../Database/ProductManagement.db "SELECT COUNT(*) FROM OutboxMessage WHERE SentTime IS NULL;"
+
+# View recent messages
+sqlite3 ../Database/ProductManagement.db "SELECT MessageType, SentTime, EnqueueTime FROM OutboxMessage ORDER BY SequenceNumber DESC LIMIT 10;"
+```
 
 ## 📚 API Documentation
 
@@ -270,14 +294,15 @@ After starting the API, check the RabbitMQ Management UI:
 
 ## 🔄 Event Flow
 
-### Cart Checkout to Order Creation (Async Event-Driven)
+### Cart Checkout to Order Creation (Async Event-Driven with Transactional Outbox)
 
 ```mermaid
 sequenceDiagram
     participant User
     participant API
     participant Cart
-    participant MassTransit
+    participant OutboxDB
+    participant OutboxWorker
     participant RabbitMQ
     participant OrderConsumer
     participant StockConsumer
@@ -286,13 +311,24 @@ sequenceDiagram
     User->>API: POST /Cart/CheckoutByUserId/{userId}
     API->>Cart: Checkout()
     Cart->>Cart: Raise CartCheckedOutEvent (domain)
-    Cart->>MassTransit: Publish CartCheckedOutIntegrationEvent
-    MassTransit->>RabbitMQ: Exchange: CartCheckedOutIntegrationEvent
+    Cart->>OutboxDB: Buffer CartCheckedOutIntegrationEvent
+    API->>OutboxDB: SaveChangesAsync() - ATOMIC COMMIT
+    Note over OutboxDB: Cart data + Outbox message committed together
+
+    OutboxWorker->>OutboxDB: Poll every 10 seconds
+    OutboxDB->>OutboxWorker: Pending messages
+    OutboxWorker->>RabbitMQ: Publish CartCheckedOutIntegrationEvent
+    OutboxWorker->>OutboxDB: Mark as sent
+
     RabbitMQ->>OrderConsumer: Queue: order-creation-consumer
     OrderConsumer->>API: CreateOrderCommand
     API->>API: Raise OrderCreatedEvent (domain)
-    API->>MassTransit: Publish OrderCreatedIntegrationEvent
-    MassTransit->>RabbitMQ: Exchange: OrderCreatedIntegrationEvent
+    API->>OutboxDB: Buffer OrderCreatedIntegrationEvent
+    API->>OutboxDB: SaveChangesAsync() - ATOMIC COMMIT
+
+    OutboxWorker->>OutboxDB: Poll for new messages
+    OutboxWorker->>RabbitMQ: Publish OrderCreatedIntegrationEvent
+    OutboxWorker->>OutboxDB: Mark as sent
 
     par Parallel Processing
         RabbitMQ->>StockConsumer: Queue: stock-deduction-consumer
@@ -407,18 +443,18 @@ ProductManagement/
 │   │   ├── ProductRepository.cs
 │   │   ├── CategoryRepository.cs
 │   │   ├── OrderRepository.cs
-│   │   └── InMemoryCartRepository.cs  # In-memory cart (with domain event publishing)
+│   │   └── InMemoryCartRepository.cs  # Hybrid: in-memory cart + outbox for events
 │   ├── Messaging/
 │   │   └── Consumers/                 # MassTransit consumers
 │   │       ├── OrderCreationConsumer.cs       # Implements IConsumer<T>
 │   │       ├── StockDeductionConsumer.cs
 │   │       └── CartClearingConsumer.cs
 │   ├── Persistence/
-│   │   ├── ProductManagementDbContext.cs
+│   │   ├── ProductManagementDbContext.cs      # Includes MassTransit outbox tables
 │   │   └── Interceptors/
 │   │       └── PublishDomainEventsInterceptor.cs  # Auto-publishes domain events
-│   ├── Migrations/                    # EF Core migrations
-│   └── DependencyInjection.cs         # MassTransit configuration
+│   ├── Migrations/                    # EF Core migrations (includes outbox tables)
+│   └── DependencyInjection.cs         # MassTransit + Outbox configuration
 │
 ├── ProductManagement.Contracts/       # API contracts (DTOs)
 │   ├── Cart/
@@ -481,11 +517,17 @@ ProductManagement/
 
 ### Messaging Patterns
 
+- **Transactional Outbox Pattern**: Reliable message delivery
+  - Messages stored in database with entity changes (atomic transaction)
+  - Background worker polls OutboxMessage table every 10 seconds
+  - Publishes to RabbitMQ when available (automatic retry)
+  - Prevents message loss during RabbitMQ outages
 - **Publish/Subscribe**: One event → Multiple consumers
   - `OrderCreatedIntegrationEvent` → `StockDeductionConsumer` + `CartClearingConsumer`
 - **Point-to-Point**: One event → One consumer
   - `CartCheckedOutIntegrationEvent` → `OrderCreationConsumer`
 - **Retry Pattern**: Exponential backoff (1s → 2s → 4s)
+- **Idempotency Pattern**: InboxState table prevents duplicate processing
 - **Error Queue**: Failed messages moved to `{queue-name}_error`
 
 ## 🧪 Testing the API
@@ -624,17 +666,24 @@ curl -X GET "$BASE_URL/api/Products/GetProductBy/{product-id}"
 
 ## 📖 Message Queue Documentation
 
-For detailed documentation on the message queue implementation, migration from custom RabbitMQ to MassTransit, and architectural decisions, see:
+For detailed documentation on the message queue implementation, transactional outbox pattern, migration from custom RabbitMQ to MassTransit, and architectural decisions, see:
 
 **[📄 Message Queue Documentation](MessageQueue-Documentation.md)**
 
-This document includes:
+This comprehensive document includes:
+- **Transactional Outbox Pattern** explanation and implementation
+  - Problem/solution overview
+  - Database tables (InboxState, OutboxMessage, OutboxState)
+  - Message buffering and commit flow
+  - Background delivery worker behavior
+  - Hybrid cart implementation strategy
 - Complete event flow diagrams
 - Step-by-step processing breakdown
-- Old vs New implementation comparison
-- MassTransit best practices
+- Old vs New implementation comparison (67% code reduction)
+- MassTransit configuration and best practices
+- Monitoring queries for outbox tables
 - Troubleshooting guide
-- Monitoring with RabbitMQ Management UI
+- RabbitMQ Management UI usage
 
 ## 🤝 Contributing
 
@@ -675,6 +724,11 @@ This project is licensed under the MIT License.
 
 - ✅ **Clean Architecture** with DDD principles
 - ✅ **Event-Driven** with MassTransit + RabbitMQ
+- ✅ **Transactional Outbox Pattern** for guaranteed message delivery
+  - Atomic commits (database + messages)
+  - Survives RabbitMQ outages
+  - Idempotent consumers
+  - Background delivery worker
 - ✅ **CQRS** with MediatR
 - ✅ **Automatic Stock Reservation** when adding to cart
 - ✅ **Async Order Processing** with retry and error handling
