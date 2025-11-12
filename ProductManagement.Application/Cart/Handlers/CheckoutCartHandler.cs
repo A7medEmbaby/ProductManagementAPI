@@ -23,23 +23,17 @@ public class CheckoutCartHandler : IRequestHandler<CheckoutCartCommand, CartResp
         if (!cart.Items.Any())
             throw new InvalidOperationException("Cannot checkout an empty cart");
 
-        // Capture response before clearing cart
+        // Capture response before checkout
         var response = cart.ToResponse();
 
-        // Checkout (raises CartCheckedOutEvent)
+        // Checkout (marks cart as checked out, raises CartCheckedOutEvent)
         cart.Checkout();
 
-        // Save cart (publishes CartCheckedOutEvent, commits to outbox)
+        // Save cart (publishes CartCheckedOutEvent to outbox, marks cart as CheckedOut)
         await _cartRepository.SaveAsync(cart, cancellationToken);
 
-        // Clear cart items (raises CartClearedEvent to release stock)
-        cart.Clear();
-
-        // Save again (publishes CartClearedEvent, releases reserved stock)
-        await _cartRepository.SaveAsync(cart, cancellationToken);
-
-        // Delete empty cart from repository (free memory)
-        await _cartRepository.DeleteAsync(request.GetUserId(), cancellationToken);
+        // Cart clearing will be handled asynchronously by CartClearingConsumer
+        // when it receives the OrderCreatedIntegrationEvent
 
         return response;
     }

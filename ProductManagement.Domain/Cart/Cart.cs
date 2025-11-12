@@ -11,6 +11,7 @@ public class Cart : AggregateRoot<CartId, Guid>
     private readonly List<CartItem> _items = new();
 
     public UserId UserId { get; private set; }
+    public CartStatus Status { get; private set; }
     public IReadOnlyList<CartItem> Items => _items.AsReadOnly();
     public int ItemCount => _items.Sum(i => i.Quantity);
     public Money TotalAmount
@@ -33,6 +34,7 @@ public class Cart : AggregateRoot<CartId, Guid>
     private Cart(CartId id, UserId userId) : base(id)
     {
         UserId = userId;
+        Status = CartStatus.Active;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = null;
     }
@@ -46,6 +48,9 @@ public class Cart : AggregateRoot<CartId, Guid>
 
     public void AddItem(ProductId productId, ProductName productName, int quantity, Money unitPrice)
     {
+        if (Status == CartStatus.CheckedOut)
+            throw new InvalidOperationException("Cannot add items to a checked-out cart");
+
         if (quantity <= 0)
             throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
 
@@ -87,6 +92,9 @@ public class Cart : AggregateRoot<CartId, Guid>
 
     public void RemoveItem(CartItemId itemId)
     {
+        if (Status == CartStatus.CheckedOut)
+            throw new InvalidOperationException("Cannot remove items from a checked-out cart");
+
         var item = _items.FirstOrDefault(i => i.Id.Value == itemId.Value);
 
         if (item == null)
@@ -110,6 +118,9 @@ public class Cart : AggregateRoot<CartId, Guid>
 
     public void UpdateItemQuantity(CartItemId itemId, int newQuantity)
     {
+        if (Status == CartStatus.CheckedOut)
+            throw new InvalidOperationException("Cannot update item quantities in a checked-out cart");
+
         if (newQuantity <= 0)
             throw new ArgumentException("Quantity must be greater than zero", nameof(newQuantity));
 
@@ -153,6 +164,9 @@ public class Cart : AggregateRoot<CartId, Guid>
 
     public void Checkout()
     {
+        if (Status == CartStatus.CheckedOut)
+            throw new InvalidOperationException("Cart has already been checked out");
+
         if (!_items.Any())
             throw new InvalidOperationException("Cannot checkout an empty cart");
 
@@ -163,12 +177,21 @@ public class Cart : AggregateRoot<CartId, Guid>
             item.UnitPrice
         )).ToList();
 
+        // Mark cart as checked out
+        MarkAsCheckedOut();
+
         RaiseDomainEvent(CartCheckedOutEvent.Create(
             (CartId)AggregateId,
             UserId,
             checkoutItems,
             TotalAmount
         ));
+    }
+
+    private void MarkAsCheckedOut()
+    {
+        Status = CartStatus.CheckedOut;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public CartItem? GetItem(CartItemId itemId)

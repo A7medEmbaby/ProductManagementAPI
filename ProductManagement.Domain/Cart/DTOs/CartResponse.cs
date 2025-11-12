@@ -3,6 +3,7 @@
 public record CartResponse(
     Guid CartId,
     Guid UserId,
+    string Status,
     List<CartItemResponse> Items,
     int ItemCount,
     decimal TotalAmount,
@@ -27,6 +28,7 @@ public static class CartExtensions
         => new(
             ((Domain.Cart.ValueObjects.CartId)cart.AggregateId).Value,
             cart.UserId.Value,
+            cart.Status.ToString(),
             cart.Items.Select(ToItemResponse).ToList(),
             cart.ItemCount,
             cart.TotalAmount.Amount,
